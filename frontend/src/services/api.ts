@@ -29,10 +29,10 @@ export const resolveApiBaseUrl = (): string => {
       (window as any).Capacitor?.isNativePlatform());
 
   if (isCapacitorNative) {
-    return "https://project-45-11uq.onrender.com/api";
+    return "/api";
   }
 
-  return "https://project-45-11uq.onrender.com/api";
+  return "/api";
 };
 
 export const API_BASE_URL = resolveApiBaseUrl();
