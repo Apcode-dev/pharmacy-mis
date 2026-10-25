@@ -65,16 +65,16 @@ export class AuthService {
     const user = await UserModel.findOne({ email: payload.email.toLowerCase().trim() });
 
     if (!user) {
-      throw new Error("Account nahi mila! Kripya Admin se apni login ID create karwaye and verify karaye.");
+      throw new Error("Account not found. Please contact the administrator to create and verify your account.");
     }
 
     if (user.status !== "ACTIVE") {
-      throw new Error("Aapka account inactive ya approval ke liye pending hai. Kripya Admin se account activate karayein.");
+      throw new Error("Your account is inactive or pending approval. Please contact the administrator for activation.");
     }
 
     const isMatch = await bcrypt.compare(payload.password, user.passwordHash);
     if (!isMatch) {
-      throw new Error("Password galat hai! Kripya sahi credentials dalein ya Admin se ID verify karaye.");
+      throw new Error("Invalid password. Please check your credentials or contact the administrator.");
     }
 
     const normalizeRole = (r: string) => {
@@ -85,7 +85,7 @@ export class AuthService {
     };
 
     if (payload.role && normalizeRole(user.role) !== normalizeRole(payload.role)) {
-      throw new Error(`Role match nahi hua! Aapka account "${user.role}" ke liye authorized hai, lekin aapne "${payload.role}" select kiya hai. Kripya Admin se ID create karwaye and verify karaye.`);
+      throw new Error(`Role mismatch. Your account is authorized as "${user.role}", but you selected "${payload.role}". Please select the correct role or contact the administrator.`);
     }
 
     const tokenPayload = {
@@ -162,11 +162,11 @@ export class AuthService {
 
     if (data.password && data.password.trim()) {
       if (!data.currentPassword) {
-        throw new Error("Purana (current) password daalna zaroori hai naya password set karne ke liye.");
+        throw new Error("Current password is required to set a new password.");
       }
       const isMatch = await bcrypt.compare(data.currentPassword, user.passwordHash);
       if (!isMatch) {
-        throw new Error("Current password galat hai! Kripya apna sahi password dalein.");
+        throw new Error("Incorrect current password. Please enter your correct password.");
       }
       user.passwordHash = await bcrypt.hash(data.password.trim(), 10);
       user.mustChangePassword = false; // Mandatory password change completed!

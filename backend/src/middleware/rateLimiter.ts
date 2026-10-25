@@ -6,7 +6,7 @@ export const loginLimiter = rateLimit({
   max: 10,
   message: {
     success: false,
-    error: "Bohat zyaada login attempts ho gaye hain. Security ke liye 15 minute baad try karein.",
+    error: "Too many login attempts. For security reasons, please try again after 15 minutes.",
   },
   standardHeaders: true,
   legacyHeaders: false,
@@ -18,7 +18,7 @@ export const registerLimiter = rateLimit({
   max: 5,
   message: {
     success: false,
-    error: "Registration attempts limit reach ho gayi hai. Kripya 1 ghante baad dobara try karein.",
+    error: "Registration attempt limit reached. Please try again after 1 hour.",
   },
   standardHeaders: true,
   legacyHeaders: false,
