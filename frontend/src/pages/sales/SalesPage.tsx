@@ -120,12 +120,14 @@ export const SalesPage: React.FC = () => {
       const visionRes = await api.post("/scanner/vision-scan", { imageBase64: base64 });
       if (visionRes.data.success && visionRes.data.data) {
         const data = visionRes.data.data;
-        const code = data.extractedInfo?.batchNumber || data.code || "";
+        const code = data.batchNumber || data.extractedInfo?.batchNumber || data.code || "";
         if (code) {
           handleScannedCode(code);
         } else {
           showToast.error("Failed to extract batch code from label text.");
         }
+      } else {
+        showToast.error(visionRes.data.message || "Required data not found. Please upload a clearer image.");
       }
     } catch (err) {
       console.error("POS Vision Scan Error:", err);

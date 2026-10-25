@@ -26,10 +26,31 @@ export class ScannerController {
   async visionScan(req: Request, res: Response, next: NextFunction) {
     try {
       const { imageBase64 } = req.body;
+      if (!imageBase64) {
+        return res.status(200).json({
+          success: false,
+          data: {
+            batchNumber: null,
+            manufacturingDate: null,
+            expiryDate: null,
+          },
+          foundFields: [],
+          message: "Required data not found",
+        });
+      }
       const result = await scannerService.visionScan(imageBase64);
-      res.status(200).json({ success: true, data: result });
+      return res.status(200).json(result);
     } catch (err: any) {
-      res.status(400).json({ success: false, error: err.message });
+      return res.status(200).json({
+        success: false,
+        data: {
+          batchNumber: null,
+          manufacturingDate: null,
+          expiryDate: null,
+        },
+        foundFields: [],
+        message: err.message || "Required data not found",
+      });
     }
   }
 }

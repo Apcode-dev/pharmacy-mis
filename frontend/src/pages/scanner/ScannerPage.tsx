@@ -55,6 +55,23 @@ export const ScannerPage: React.FC = () => {
   const [scanSuccessFlash, setScanSuccessFlash] = useState(false);
   const [ocrLoading, setOcrLoading] = useState(false);
 
+  // Strict Gemini OCR Extraction State (Batch Number, Mfg Date, Expiry Date Only)
+  const [extractionResult, setExtractionResult] = useState<{
+    hasResult: boolean;
+    success: boolean;
+    data: {
+      batchNumber: string | null;
+      manufacturingDate: string | null;
+      expiryDate: string | null;
+    };
+    foundFields: string[];
+    message: string;
+  } | null>(null);
+
+  const [reviewedBatchNumber, setReviewedBatchNumber] = useState<string>("");
+  const [reviewedMfgDate, setReviewedMfgDate] = useState<string>("");
+  const [reviewedExpDate, setReviewedExpDate] = useState<string>("");
+
   // Inward Form State
   const [selectedBatchIndex, setSelectedBatchIndex] = useState<number | "new">(0);
   const [inwardBatchNo, setInwardBatchNo] = useState("");
@@ -423,77 +440,120 @@ export const ScannerPage: React.FC = () => {
     });
   };
 
+  const toISOFromDDMMYYYY = (ddmmyyyy: string | null | undefined): string => {
+    if (!ddmmyyyy) return "";
+    const parts = ddmmyyyy.trim().split(/[\/\-\.]/);
+    if (parts.length === 3) {
+      const d = parts[0].padStart(2, "0");
+      const m = parts[1].padStart(2, "0");
+      const y = parts[2];
+      if (y.length === 4) {
+        return `${y}-${m}-${d}`;
+      }
+    }
+    return "";
+  };
+
+  const toDDMMYYYYFromISO = (iso: string | null | undefined): string => {
+    if (!iso) return "";
+    const parts = iso.trim().split("-");
+    if (parts.length === 3) {
+      const y = parts[0];
+      const m = parts[1].padStart(2, "0");
+      const d = parts[2].padStart(2, "0");
+      return `${d}/${m}/${y}`;
+    }
+    return iso;
+  };
+
   const recognizeImageText = async (imageSource: File | Blob | HTMLCanvasElement) => {
     setOcrLoading(true);
     setLoading(true);
     setError(null);
+    setExtractionResult(null);
 
     try {
-      // 1. Try Backend Vision AI first (Gemini 2.0 / 1.5 Flash Vision or ChatGPT Vision)
-      try {
-        const base64 = await imageToBase64(imageSource);
-        const visionRes = await api.post("/scanner/vision-scan", { imageBase64: base64 });
-        if (visionRes.data.success && visionRes.data.data?.aiEnabled) {
-          const data = visionRes.data.data;
-          playBeep();
-          setLookupResult(data);
+      const base64 = await imageToBase64(imageSource);
+      const visionRes = await api.post("/scanner/vision-scan", { imageBase64: base64 });
+      const res = visionRes.data;
 
-          const extracted = data.extractedInfo;
-          if (extracted?.batchNumber) {
-            setInputCode(extracted.batchNumber);
-            setInwardBatchNo(extracted.batchNumber);
-          }
-          if (extracted?.mfgDate) setInwardMfgDate(extracted.mfgDate);
-          if (extracted?.expDate) setInwardExpDate(extracted.expDate);
-          if (extracted?.mrp) setInwardMrp(extracted.mrp.toString());
-
-          if (data.found) {
-            const batches = data.batches || [];
-            let targetIdx = 0;
-            if (data.matchedBatchId && batches.length > 0) {
-              const foundIdx = batches.findIndex((b: any) => b._id === data.matchedBatchId);
-              if (foundIdx !== -1) targetIdx = foundIdx;
-            }
-            if (batches.length > 0) {
-              setSelectedBatchIndex(targetIdx);
-              const b = batches[targetIdx];
-              setInwardBatchNo(b.batchNumber);
-              setInwardExpDate(b.expiryDate ? b.expiryDate.split("T")[0] : extracted?.expDate || "2027-12-31");
-              if (b.manufacturingDate) setInwardMfgDate(b.manufacturingDate.split("T")[0]);
-              setInwardPrice(b.purchasePrice?.toString() || "18.50");
-              setInwardMrp(b.mrp?.toString() || extracted?.mrp?.toString() || "32.00");
-            } else {
-              setSelectedBatchIndex("new");
-            }
-          }
-          return;
-        }
-      } catch (visionErr) {
-        console.warn("Vision AI endpoint skipped/fallback to local OCR:", visionErr);
-      }
-
-      // 2. Fallback to Local High-Contrast Tesseract OCR
-      let targetSource: any = imageSource;
-      if (imageSource instanceof File || imageSource instanceof Blob) {
-        targetSource = await preprocessImageForOCR(imageSource);
-      }
-
-      const { createWorker } = await import("tesseract.js");
-      const worker = await createWorker("eng");
-      const ret = await worker.recognize(targetSource);
-      await worker.terminate();
-
-      const text = ret.data.text ? ret.data.text.trim() : "";
-      if (text) {
+      if (res && res.success && Array.isArray(res.foundFields) && res.foundFields.length > 0) {
         playBeep();
-        setInputCode(text);
-        await handleLookup(text);
+        const extracted = res.data || {};
+        const bNo = extracted.batchNumber || null;
+        const mfg = extracted.manufacturingDate || null;
+        const exp = extracted.expiryDate || null;
+
+        setExtractionResult({
+          hasResult: true,
+          success: true,
+          data: {
+            batchNumber: bNo,
+            manufacturingDate: mfg,
+            expiryDate: exp,
+          },
+          foundFields: res.foundFields,
+          message: res.message || "Required data extracted successfully",
+        });
+
+        // Set reviewed values for user editing
+        setReviewedBatchNumber(bNo || "");
+        setReviewedMfgDate(mfg || "");
+        setReviewedExpDate(exp || "");
+
+        // Auto-fill inward form state for convenience without overwriting
+        if (bNo) {
+          setInputCode(bNo);
+          setInwardBatchNo(bNo);
+        }
+        if (mfg) {
+          const isoMfg = toISOFromDDMMYYYY(mfg);
+          if (isoMfg) setInwardMfgDate(isoMfg);
+        }
+        if (exp) {
+          const isoExp = toISOFromDDMMYYYY(exp);
+          if (isoExp) setInwardExpDate(isoExp);
+        }
+
+        // Check if medicine with this batch exists in registry
+        if (bNo) {
+          try {
+            const lookupRes = await api.get(`/scanner/lookup/${encodeURIComponent(bNo)}`);
+            if (lookupRes.data?.success) {
+              setLookupResult(lookupRes.data.data);
+            }
+          } catch {}
+        }
+        showToast.success(`Extracted: ${res.foundFields.join(", ")}`);
       } else {
-        setError("Could not read label text. Please capture or upload a clear, well-lit photo.");
+        // Requirement 4: If none of the three fields can be confidently identified
+        setExtractionResult({
+          hasResult: true,
+          success: false,
+          data: {
+            batchNumber: null,
+            manufacturingDate: null,
+            expiryDate: null,
+          },
+          foundFields: [],
+          message: "Required data not found. Please upload a clearer image or enter the details manually.",
+        });
+        setError("Required data not found. Please upload a clearer image or enter the details manually.");
       }
     } catch (err: any) {
       console.error("OCR recognition error:", err);
-      setError("AI Text Recognition error. Please enter the batch code manually.");
+      setExtractionResult({
+        hasResult: true,
+        success: false,
+        data: {
+          batchNumber: null,
+          manufacturingDate: null,
+          expiryDate: null,
+        },
+        foundFields: [],
+        message: "Required data not found. Please upload a clearer image or enter the details manually.",
+      });
+      setError("Required data not found. Please upload a clearer image or enter the details manually.");
     } finally {
       setOcrLoading(false);
       setLoading(false);
@@ -530,11 +590,14 @@ export const ScannerPage: React.FC = () => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Reset file input so user can re-capture the same image if needed
+    // Reset file input so user can re-capture or re-upload if needed
     e.target.value = "";
 
     try {
-      // 1. Native BarcodeDetector if available
+      // 1. Send image directly to Gemini-powered OCR extraction flow (Strict Batch & Dates)
+      await recognizeImageText(file);
+
+      // 2. Concurrently detect standard 1D/2D barcodes on packaging to assist medicine catalog lookup
       if ("BarcodeDetector" in window) {
         try {
           const imgBitmap = await createImageBitmap(file);
@@ -549,34 +612,16 @@ export const ScannerPage: React.FC = () => {
           if (detector) {
             const barcodes = await detector.detect(imgBitmap);
             if (barcodes && barcodes.length > 0 && barcodes[0].rawValue) {
-              handleCodeFound(barcodes[0].rawValue);
-              return;
+              const barcodeVal = barcodes[0].rawValue.trim();
+              if (barcodeVal) {
+                handleLookup(barcodeVal, false);
+              }
             }
           }
         } catch {}
       }
-
-      // 2. Bundled ZXing image decoder
-      const reader = createZxingReader();
-      const imgUrl = URL.createObjectURL(file);
-      try {
-        const result = await reader.decodeFromImageUrl(imgUrl);
-        URL.revokeObjectURL(imgUrl);
-        if (result) {
-          const text = result.getText ? result.getText() : (result as any).text;
-          if (text) {
-            handleCodeFound(text);
-            return;
-          }
-        }
-      } catch {
-        URL.revokeObjectURL(imgUrl);
-      }
-
-      // 3. Fallback: No Barcode/QR Code detected -> Run Tesseract OCR to read text printed on box/strip
-      await recognizeImageText(file);
     } catch (err: any) {
-      setError("Barcode or label could not be scanned. Please upload a clear photo or enter the code manually.");
+      setError("Medicine packaging could not be scanned. Please upload a clear photo or enter the code manually.");
     }
   };
 
@@ -598,7 +643,7 @@ export const ScannerPage: React.FC = () => {
     api.get("/manufacturers").then((res) => setSuppliers(res.data.data || [])).catch(() => {});
   }, []);
 
-  const handleLookup = async (codeToSearch: string) => {
+  const handleLookup = async (codeToSearch: string, overwriteBatchInputs: boolean = true) => {
     const code = (codeToSearch || "").trim();
     if (!code) {
       setError("Please scan a barcode or enter the batch code.");
@@ -616,17 +661,19 @@ export const ScannerPage: React.FC = () => {
         setLookupResult(data);
 
         const extracted = data.extractedInfo;
-        if (extracted?.batchNumber) {
-          setInwardBatchNo(extracted.batchNumber);
-        }
-        if (extracted?.mfgDate) {
-          setInwardMfgDate(extracted.mfgDate);
-        }
-        if (extracted?.expDate) {
-          setInwardExpDate(extracted.expDate);
-        }
-        if (extracted?.mrp) {
-          setInwardMrp(extracted.mrp.toString());
+        if (overwriteBatchInputs) {
+          if (extracted?.batchNumber) {
+            setInwardBatchNo(extracted.batchNumber);
+          }
+          if (extracted?.mfgDate) {
+            setInwardMfgDate(extracted.mfgDate);
+          }
+          if (extracted?.expDate) {
+            setInwardExpDate(extracted.expDate);
+          }
+          if (extracted?.mrp) {
+            setInwardMrp(extracted.mrp.toString());
+          }
         }
 
         if (data.found) {
@@ -640,16 +687,20 @@ export const ScannerPage: React.FC = () => {
           if (batches.length > 0) {
             setSelectedBatchIndex(targetIdx);
             const b = batches[targetIdx];
-            setInwardBatchNo(b.batchNumber);
-            setInwardExpDate(b.expiryDate ? b.expiryDate.split("T")[0] : extracted?.expDate || "2027-12-31");
-            if (b.manufacturingDate) {
-              setInwardMfgDate(b.manufacturingDate.split("T")[0]);
+            if (overwriteBatchInputs) {
+              setInwardBatchNo(b.batchNumber);
+              setInwardExpDate(b.expiryDate ? b.expiryDate.split("T")[0] : extracted?.expDate || "2027-12-31");
+              if (b.manufacturingDate) {
+                setInwardMfgDate(b.manufacturingDate.split("T")[0]);
+              }
             }
             setInwardPrice(b.purchasePrice?.toString() || "18.50");
             setInwardMrp(b.mrp?.toString() || extracted?.mrp?.toString() || "32.00");
           } else {
             setSelectedBatchIndex("new");
-            setInwardBatchNo(extracted?.batchNumber || `B-${Date.now().toString().slice(-4)}`);
+            if (overwriteBatchInputs && !inwardBatchNo) {
+              setInwardBatchNo(extracted?.batchNumber || "");
+            }
           }
         }
       }
@@ -907,7 +958,7 @@ export const ScannerPage: React.FC = () => {
                     <span>AI Scanning Medicine Image...</span>
                   </div>
                   <p className="text-xs text-emerald-400 mt-2 font-mono bg-emerald-950/80 px-3.5 py-1.5 rounded-lg border border-emerald-500/40 animate-pulse">
-                    Fetching Batch No, Mfg Date, Expiry &amp; MRP...
+                    Extracting Batch No, Mfg Date &amp; Expiry Date...
                   </p>
                 </div>
               )}
@@ -1089,7 +1140,236 @@ export const ScannerPage: React.FC = () => {
 
         {/* Right Column: Exact Scanned Medicine Details & Batch Inward Form */}
         <div className="lg:col-span-7">
-          {error && (
+          {/* 1. Strict Medicine Batch & Date Extraction Results Card */}
+          {extractionResult?.hasResult && extractionResult.success && (
+            <div className="bg-white rounded-2xl border-2 border-emerald-500/40 shadow-sm overflow-hidden mb-6 animate-in fade-in duration-200">
+              <div className="px-4 py-3 bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 text-white flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <Sparkles className="w-4 h-4 text-emerald-200 animate-pulse" />
+                  <span className="font-bold text-xs uppercase tracking-wider">
+                    Medicine Batch &amp; Date Extraction
+                  </span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-white/20 text-white border border-white/30 backdrop-blur-xs">
+                    {extractionResult.foundFields.length} of 3 Found
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setExtractionResult(null)}
+                    className="text-white/80 hover:text-white p-0.5 cursor-pointer"
+                    title="Dismiss results card"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+
+              <div className="p-4 sm:p-5 space-y-4">
+                <p className="text-xs text-slate-600">
+                  Visible details extracted using Gemini Vision AI. Review and edit any field before saving into inventory:
+                </p>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  {/* Field 1: Batch Number */}
+                  <div className={`p-3.5 rounded-xl border transition-all ${
+                    extractionResult.data.batchNumber
+                      ? "bg-emerald-50/60 border-emerald-200"
+                      : "bg-slate-50 border-slate-200"
+                  }`}>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-500">
+                        Batch Number
+                      </span>
+                      {extractionResult.data.batchNumber ? (
+                        <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300">
+                          Found ✓
+                        </span>
+                      ) : (
+                        <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-slate-200 text-slate-600">
+                          Not found
+                        </span>
+                      )}
+                    </div>
+                    <input
+                      type="text"
+                      value={reviewedBatchNumber}
+                      onChange={(e) => {
+                        setReviewedBatchNumber(e.target.value);
+                        setInwardBatchNo(e.target.value);
+                      }}
+                      placeholder="e.g. AB12345"
+                      className="w-full px-2.5 py-1.5 bg-white border border-slate-300 rounded-lg text-xs font-mono font-bold text-slate-900 focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                    />
+                  </div>
+
+                  {/* Field 2: Manufacturing Date */}
+                  <div className={`p-3.5 rounded-xl border transition-all ${
+                    extractionResult.data.manufacturingDate
+                      ? "bg-emerald-50/60 border-emerald-200"
+                      : "bg-slate-50 border-slate-200"
+                  }`}>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-500">
+                        Mfg Date
+                      </span>
+                      {extractionResult.data.manufacturingDate ? (
+                        <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300">
+                          Found ✓
+                        </span>
+                      ) : (
+                        <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-slate-200 text-slate-600">
+                          Not found
+                        </span>
+                      )}
+                    </div>
+                    <input
+                      type="text"
+                      value={reviewedMfgDate}
+                      onChange={(e) => {
+                        setReviewedMfgDate(e.target.value);
+                        const iso = toISOFromDDMMYYYY(e.target.value);
+                        if (iso) setInwardMfgDate(iso);
+                      }}
+                      placeholder="DD/MM/YYYY"
+                      className="w-full px-2.5 py-1.5 bg-white border border-slate-300 rounded-lg text-xs font-mono font-bold text-slate-900 focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                    />
+                  </div>
+
+                  {/* Field 3: Expiry Date */}
+                  <div className={`p-3.5 rounded-xl border transition-all ${
+                    extractionResult.data.expiryDate
+                      ? "bg-emerald-50/60 border-emerald-200"
+                      : "bg-slate-50 border-slate-200"
+                  }`}>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-500">
+                        Expiry Date
+                      </span>
+                      {extractionResult.data.expiryDate ? (
+                        <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300">
+                          Found ✓
+                        </span>
+                      ) : (
+                        <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-slate-200 text-slate-600">
+                          Not found
+                        </span>
+                      )}
+                    </div>
+                    <input
+                      type="text"
+                      value={reviewedExpDate}
+                      onChange={(e) => {
+                        setReviewedExpDate(e.target.value);
+                        const iso = toISOFromDDMMYYYY(e.target.value);
+                        if (iso) setInwardExpDate(iso);
+                      }}
+                      placeholder="DD/MM/YYYY"
+                      className="w-full px-2.5 py-1.5 bg-white border border-slate-300 rounded-lg text-xs font-mono font-bold text-slate-900 focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-100">
+                  <div className="flex items-center space-x-2">
+                    <button
+                      type="button"
+                      onClick={captureCameraFrameAndRecognize}
+                      className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 active:bg-slate-300 text-slate-700 text-xs font-semibold rounded-xl transition-colors cursor-pointer flex items-center space-x-1.5"
+                    >
+                      <Camera className="w-3.5 h-3.5" />
+                      <span>Capture Another</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => uploadFileInputRef.current?.click()}
+                      className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 active:bg-slate-300 text-slate-700 text-xs font-semibold rounded-xl transition-colors cursor-pointer flex items-center space-x-1.5"
+                    >
+                      <Upload className="w-3.5 h-3.5" />
+                      <span>Upload Photo</span>
+                    </button>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (reviewedBatchNumber) {
+                        setInwardBatchNo(reviewedBatchNumber);
+                        setInputCode(reviewedBatchNumber);
+                      }
+                      if (reviewedMfgDate) {
+                        const iso = toISOFromDDMMYYYY(reviewedMfgDate);
+                        if (iso) setInwardMfgDate(iso);
+                      }
+                      if (reviewedExpDate) {
+                        const iso = toISOFromDDMMYYYY(reviewedExpDate);
+                        if (iso) setInwardExpDate(iso);
+                      }
+                      showToast.success("Applied reviewed details to inward form!");
+                    }}
+                    className="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow-xs transition-colors cursor-pointer flex items-center space-x-1.5"
+                  >
+                    <CheckCircle2 className="w-3.5 h-3.5" />
+                    <span>Apply to Inward Form</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* 2. Data Not Found Error State (Requirement 4) */}
+          {extractionResult?.hasResult && !extractionResult.success && (
+            <div className="bg-rose-50 border border-rose-200 rounded-2xl p-5 mb-6 text-rose-900 shadow-sm animate-in fade-in duration-200">
+              <div className="flex items-start space-x-3">
+                <div className="w-10 h-10 rounded-xl bg-rose-100 text-rose-600 flex items-center justify-center shrink-0">
+                  <AlertCircle className="w-5 h-5" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h4 className="text-sm font-bold text-rose-950">
+                    Required Data Not Found
+                  </h4>
+                  <p className="text-xs text-rose-700 mt-1 leading-relaxed">
+                    Required data not found. Please upload a clearer image or enter the details manually.
+                  </p>
+
+                  <div className="flex flex-wrap items-center gap-2 mt-3.5">
+                    <button
+                      type="button"
+                      onClick={captureCameraFrameAndRecognize}
+                      className="px-3.5 py-1.5 bg-rose-600 hover:bg-rose-700 active:bg-rose-800 text-white rounded-xl text-xs font-bold transition-all shadow-xs flex items-center space-x-1.5 cursor-pointer"
+                    >
+                      <Camera className="w-3.5 h-3.5" />
+                      <span>Retry Image Capture</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => uploadFileInputRef.current?.click()}
+                      className="px-3.5 py-1.5 bg-white hover:bg-rose-100 text-rose-800 border border-rose-300 rounded-xl text-xs font-bold transition-all flex items-center space-x-1.5 cursor-pointer"
+                    >
+                      <Upload className="w-3.5 h-3.5" />
+                      <span>Upload Another Photo</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setExtractionResult(null);
+                        setError(null);
+                        const el = document.querySelector('input[placeholder="Scan or Enter Code..."]') as HTMLInputElement;
+                        if (el) el.focus();
+                      }}
+                      className="px-3.5 py-1.5 bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 rounded-xl text-xs font-bold transition-all flex items-center space-x-1.5 cursor-pointer"
+                    >
+                      <Keyboard className="w-3.5 h-3.5" />
+                      <span>Enter Details Manually</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {error && !extractionResult?.hasResult && (
             <div className="mb-4 p-3.5 rounded-2xl bg-rose-50 border border-rose-200 text-rose-800 text-xs flex items-center space-x-2">
               <AlertCircle className="w-4 h-4 flex-shrink-0" />
               <span>{error}</span>
