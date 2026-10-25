@@ -90,67 +90,68 @@ export const Navbar: React.FC<NavbarProps> = ({
   };
 
   return (
-    <header className="h-16 shrink-0 w-full bg-white border-b border-slate-200 px-3 sm:px-6 flex items-center justify-between sticky top-0 z-30 shadow-xs">
-      {/* Brand & Branch */}
-      <div className="flex items-center space-x-2.5 sm:space-x-4">
-        {/* Mobile Hamburger Button */}
-        {onToggleMobileMenu && (
-          <button
-            onClick={onToggleMobileMenu}
-            className="lg:hidden p-2 rounded-xl text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors focus:outline-none focus:ring-2 focus:ring-emerald-500"
-            aria-label="Toggle navigation drawer"
-          >
-            {isMobileOpen ? <X className="w-6 h-6 text-slate-800" /> : <Menu className="w-6 h-6 text-slate-800" />}
-          </button>
-        )}
+    <header className="shrink-0 w-full bg-white border-b border-slate-200 sticky top-0 z-40 shadow-xs safe-area-top select-none transition-all">
+      <div className="h-14 sm:h-16 w-full px-2.5 sm:px-6 flex items-center justify-between gap-2 max-w-full">
+        {/* Brand & Branch */}
+        <div className="flex items-center space-x-1.5 sm:space-x-4 min-w-0 shrink">
+          {/* Mobile Hamburger Button */}
+          {onToggleMobileMenu && (
+            <button
+              onClick={onToggleMobileMenu}
+              className="lg:hidden p-1.5 sm:p-2 rounded-xl text-slate-700 hover:text-slate-900 hover:bg-slate-100 active:bg-slate-200 transition-colors focus:outline-none focus:ring-2 focus:ring-emerald-500 shrink-0 cursor-pointer"
+              aria-label="Toggle navigation drawer"
+            >
+              {isMobileOpen ? <X className="w-5 h-5 sm:w-6 sm:h-6 text-slate-800" /> : <Menu className="w-5 h-5 sm:w-6 sm:h-6 text-slate-800" />}
+            </button>
+          )}
 
-        <div className="flex items-center space-x-2 sm:space-x-2.5">
-          <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-500 flex items-center justify-center text-white shadow-md shadow-emerald-500/20 shrink-0">
-            <Activity className="w-5 h-5 sm:w-6 sm:h-6" />
-          </div>
-          <div>
-            <div className="flex items-center space-x-1.5 sm:space-x-2">
-              <span className="font-bold text-base sm:text-lg tracking-tight text-slate-900">MedFlow</span>
-              <span className="text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200">
-                PRO
-              </span>
+          <div className="flex items-center space-x-2 sm:space-x-2.5 min-w-0">
+            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-500 flex items-center justify-center text-white shadow-md shadow-emerald-500/20 shrink-0">
+              <Activity className="w-4 h-4 sm:w-6 sm:h-6" />
             </div>
-            <p className="text-[11px] text-slate-500 hidden sm:block">Medical Inventory System</p>
+            <div className="min-w-0">
+              <div className="flex items-center space-x-1 sm:space-x-2">
+                <span className="font-bold text-sm sm:text-lg tracking-tight text-slate-900 truncate">MedFlow</span>
+                <span className="text-[9px] sm:text-[10px] uppercase font-bold tracking-wider px-1 sm:px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200 shrink-0">
+                  PRO
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-500 hidden sm:block">Medical Inventory System</p>
+            </div>
+          </div>
+
+          <div className="hidden xl:flex items-center space-x-1.5 px-3 py-1 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium text-slate-600 shrink-0">
+            <Building2 className="w-3.5 h-3.5 text-slate-400" />
+            <span>Central Pharmacy</span>
           </div>
         </div>
 
-        <div className="hidden xl:flex items-center space-x-1.5 px-3 py-1 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium text-slate-600">
-          <Building2 className="w-3.5 h-3.5 text-slate-400" />
-          <span>Central Pharmacy</span>
-        </div>
-      </div>
+        {/* Right User actions */}
+        <div className="flex items-center space-x-1 sm:space-x-3 shrink-0">
+          {/* Interactive Alerts & Notifications Bell Button (Visible to all staff) */}
+          <div className="relative" ref={notifRef}>
+            <button
+              type="button"
+              onClick={toggleNotifications}
+              className={`relative p-1.5 sm:p-2 rounded-xl transition-all cursor-pointer ${
+                isNotificationsOpen 
+                  ? "bg-emerald-50 text-emerald-700 ring-2 ring-emerald-400" 
+                  : "text-slate-600 hover:text-slate-900 hover:bg-slate-100 active:bg-slate-200"
+              }`}
+              title={alertsCount > 0 ? `${alertsCount} Unresolved Alert(s) - Click to view` : "No Active Alerts"}
+              aria-label="Notifications"
+            >
+              <Bell className="w-5 h-5" />
+              {alertsCount > 0 && (
+                <span className="absolute -top-0.5 -right-0.5 min-w-[17px] h-[17px] px-1 bg-rose-500 text-white text-[9px] sm:text-[10px] font-bold rounded-full flex items-center justify-center ring-2 ring-white animate-pulse shadow-xs">
+                  {alertsCount > 99 ? "99+" : alertsCount}
+                </span>
+              )}
+            </button>
 
-      {/* Right User actions */}
-      <div className="flex items-center space-x-3 sm:space-x-4">
-        {/* Interactive Alerts & Notifications Bell Button (Visible to all staff) */}
-        <div className="relative" ref={notifRef}>
-          <button
-            type="button"
-            onClick={toggleNotifications}
-            className={`relative p-2 rounded-xl transition-all cursor-pointer ${
-              isNotificationsOpen 
-                ? "bg-emerald-50 text-emerald-700 ring-2 ring-emerald-400" 
-                : "text-slate-500 hover:text-slate-800 hover:bg-slate-100"
-            }`}
-            title={alertsCount > 0 ? `${alertsCount} Unresolved Alert(s) - Click to view` : "No Active Alerts"}
-            aria-label="Notifications"
-          >
-            <Bell className="w-5 h-5" />
-            {alertsCount > 0 && (
-              <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 bg-rose-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center ring-2 ring-white animate-pulse shadow-xs">
-                {alertsCount > 99 ? "99+" : alertsCount}
-              </span>
-            )}
-          </button>
-
-          {/* Notifications Popover Dropdown */}
-          {isNotificationsOpen && (
-            <div className="absolute right-0 mt-2 w-80 sm:w-96 bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden z-50 animate-in fade-in slide-in-from-top-2 duration-150">
+            {/* Notifications Popover Dropdown */}
+            {isNotificationsOpen && (
+              <div className="fixed inset-x-3 top-16 sm:absolute sm:inset-x-auto sm:right-0 sm:top-auto sm:mt-2 w-auto sm:w-96 max-w-[calc(100vw-1.5rem)] sm:max-w-none bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden z-50 animate-in fade-in slide-in-from-top-2 duration-150">
               {/* Header */}
               <div className="px-4 py-3 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
                 <div className="flex items-center space-x-2">
@@ -234,7 +235,7 @@ export const Navbar: React.FC<NavbarProps> = ({
         <button
           type="button"
           onClick={() => setIsProfileModalOpen(true)}
-          className="flex items-center space-x-2.5 sm:space-x-3 pl-2 sm:pl-3 border-l border-slate-200 hover:bg-slate-50 active:bg-slate-100 p-1.5 rounded-2xl transition-all cursor-pointer group text-left"
+          className="flex items-center space-x-1.5 sm:space-x-3 pl-1.5 sm:pl-3 border-l border-slate-200 hover:bg-slate-50 active:bg-slate-100 p-1 sm:p-1.5 rounded-2xl transition-all cursor-pointer group text-left shrink-0"
           title="Click to view & edit profile"
           aria-label="User profile settings"
         >
@@ -270,14 +271,15 @@ export const Navbar: React.FC<NavbarProps> = ({
               logout();
             }
           }}
-          className="flex items-center space-x-1 sm:space-x-1.5 px-2.5 sm:px-3 py-1.5 text-xs font-semibold text-rose-600 bg-rose-50/60 hover:bg-rose-100 active:bg-rose-200 border border-rose-200 rounded-lg transition-all cursor-pointer shadow-2xs"
+          className="flex items-center space-x-1 sm:space-x-1.5 px-2 sm:px-3 py-1.5 text-xs font-semibold text-rose-600 bg-rose-50/70 hover:bg-rose-100 active:bg-rose-200 border border-rose-200 rounded-lg transition-all cursor-pointer shadow-2xs shrink-0"
           title="Sign out of system"
           aria-label="Sign out"
         >
-          <LogOut className="w-3.5 h-3.5 text-rose-600" />
-          <span className="text-[11px] sm:text-xs font-bold text-rose-700">Logout</span>
+          <LogOut className="w-3.5 h-3.5 text-rose-600 shrink-0" />
+          <span className="hidden sm:inline text-xs font-bold text-rose-700">Logout</span>
         </button>
       </div>
+    </div>
 
       {/* Profile Popup Modal */}
       <ProfileModal

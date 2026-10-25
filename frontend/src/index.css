@@ -31,11 +31,26 @@ html, body, #root {
   }
 }
 
-/* iOS Safe Area for modern phones with home indicator notches */
-@supports (padding-bottom: env(safe-area-inset-bottom)) {
-  .safe-area-bottom {
-    padding-bottom: calc(0.65rem + env(safe-area-inset-bottom));
-  }
+/* Safe Area Inset Support for Mobile Notches, Cutouts & Android Status Bars */
+.safe-area-top {
+  padding-top: env(safe-area-inset-top, 0px);
+}
+
+.safe-area-bottom {
+  padding-bottom: calc(0.65rem + env(safe-area-inset-bottom, 0px));
+}
+
+.safe-area-x {
+  padding-left: env(safe-area-inset-left, 0px);
+  padding-right: env(safe-area-inset-right, 0px);
+}
+
+.pt-safe {
+  padding-top: env(safe-area-inset-top, 0px);
+}
+
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
 /* Custom sleek scrollbar for mobile and table overflow */
