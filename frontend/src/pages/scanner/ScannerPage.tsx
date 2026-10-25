@@ -39,6 +39,8 @@ export const ScannerPage: React.FC = () => {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const captureFileInputRef = useRef<HTMLInputElement | null>(null);
+  const uploadFileInputRef = useRef<HTMLInputElement | null>(null);
   const zxingReaderRef = useRef<any>(null);
   const scanTimerRef = useRef<any>(null);
   const lastScanTimeRef = useRef<number>(0);
@@ -512,11 +514,15 @@ export const ScannerPage: React.FC = () => {
       }
     }
 
-    // Fallback: Trigger device camera / file input directly so "Capture Image" ALWAYS opens!
-    if (fileInputRef.current) {
+    // Fallback: Trigger device camera capture input directly so "Capture Image" opens device camera
+    if (captureFileInputRef.current) {
+      captureFileInputRef.current.click();
+    } else if (fileInputRef.current) {
       fileInputRef.current.click();
+    } else if (uploadFileInputRef.current) {
+      uploadFileInputRef.current.click();
     } else {
-      showToast.error("Camera frame capture unavailable. Please upload medicine label photo.");
+      showToast.error("Camera capture unavailable. Please upload medicine label photo.");
     }
   };
 
@@ -752,15 +758,138 @@ export const ScannerPage: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Left Column: Viewfinder & Code Input */}
         <div className="lg:col-span-5 space-y-4">
-          <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm space-y-4">
+          <div className="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200 shadow-sm space-y-4">
+            {/* The 3 Medicine Scanner Action Cards */}
+            <div className="grid grid-cols-3 gap-2 sm:gap-3 w-full">
+              {/* 1. Camera Scanner */}
+              <button
+                type="button"
+                onClick={() => {
+                  if (isCameraActive) {
+                    stopCamera();
+                  } else {
+                    startCamera();
+                  }
+                }}
+                disabled={cameraLoading}
+                className={`group relative p-2.5 sm:p-3.5 rounded-2xl border text-center sm:text-left transition-all cursor-pointer flex flex-col justify-between overflow-hidden shadow-xs hover:shadow-md active:scale-95 ${
+                  isCameraActive
+                    ? "bg-emerald-50/90 border-emerald-500 ring-2 ring-emerald-400/30"
+                    : "bg-white hover:bg-slate-50 border-slate-200 hover:border-emerald-300"
+                }`}
+                title="Open live camera barcode & QR code scanner"
+              >
+                <div className="flex items-center justify-between w-full mb-1.5 sm:mb-2">
+                  <div
+                    className={`w-8 h-8 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center mx-auto sm:mx-0 transition-colors ${
+                      isCameraActive
+                        ? "bg-emerald-600 text-white shadow-md shadow-emerald-600/30"
+                        : "bg-emerald-50 text-emerald-600 group-hover:bg-emerald-100 group-hover:text-emerald-700"
+                    }`}
+                  >
+                    <Camera className="w-4 h-4 sm:w-5 sm:h-5" />
+                  </div>
+                  <span
+                    className={`hidden sm:inline-flex items-center text-[10px] font-bold px-1.5 py-0.5 rounded-full border ${
+                      isCameraActive
+                        ? "bg-emerald-100 text-emerald-800 border-emerald-300 animate-pulse"
+                        : "bg-slate-100 text-slate-600 border-slate-200"
+                    }`}
+                  >
+                    {isCameraActive ? "Active" : "Live"}
+                  </span>
+                </div>
+                <div className="w-full">
+                  <div className="text-[11px] sm:text-xs md:text-sm font-bold text-slate-900 group-hover:text-emerald-700 transition-colors truncate">
+                    Camera Scanner
+                  </div>
+                  <div className="text-[9px] sm:text-[11px] text-slate-500 mt-0.5 font-medium truncate">
+                    {cameraLoading ? "Starting..." : isCameraActive ? "Stop Live Scan" : "Live Barcode & QR"}
+                  </div>
+                </div>
+                {isCameraActive && (
+                  <div className="absolute top-1.5 right-1.5 sm:hidden w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
+                )}
+              </button>
+
+              {/* 2. Capture Image (OCR) */}
+              <button
+                type="button"
+                onClick={captureCameraFrameAndRecognize}
+                disabled={ocrLoading}
+                className={`group relative p-2.5 sm:p-3.5 rounded-2xl border text-center sm:text-left transition-all cursor-pointer flex flex-col justify-between overflow-hidden shadow-xs hover:shadow-md active:scale-95 ${
+                  ocrLoading
+                    ? "bg-teal-50/90 border-teal-500 ring-2 ring-teal-400/30"
+                    : "bg-white hover:bg-slate-50 border-slate-200 hover:border-teal-300"
+                }`}
+                title="Snap photo to extract Batch No, Mfg Date & Expiry with Gemini AI"
+              >
+                <div className="flex items-center justify-between w-full mb-1.5 sm:mb-2">
+                  <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-teal-50 text-teal-600 group-hover:bg-teal-100 group-hover:text-teal-700 flex items-center justify-center mx-auto sm:mx-0 transition-colors">
+                    <Sparkles className="w-4 h-4 sm:w-5 sm:h-5 text-teal-600" />
+                  </div>
+                  <span className="hidden sm:inline-flex items-center space-x-0.5 text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-teal-50 text-teal-700 border border-teal-200">
+                    <Sparkles className="w-2.5 h-2.5 text-teal-500" />
+                    <span>Gemini AI</span>
+                  </span>
+                </div>
+                <div className="w-full">
+                  <div className="text-[11px] sm:text-xs md:text-sm font-bold text-slate-900 group-hover:text-teal-700 transition-colors truncate">
+                    Capture (OCR)
+                  </div>
+                  <div className="text-[9px] sm:text-[11px] text-teal-700 font-semibold mt-0.5 truncate">
+                    Batch, Mfg &amp; Exp
+                  </div>
+                </div>
+                {ocrLoading && (
+                  <div className="absolute top-1.5 right-1.5 sm:hidden w-2 h-2 rounded-full bg-teal-500 animate-ping" />
+                )}
+              </button>
+
+              {/* 3. Upload Image */}
+              <button
+                type="button"
+                onClick={() => uploadFileInputRef.current?.click()}
+                disabled={ocrLoading}
+                className="group relative p-2.5 sm:p-3.5 rounded-2xl border bg-white hover:bg-slate-50 border-slate-200 hover:border-indigo-300 text-center sm:text-left transition-all cursor-pointer flex flex-col justify-between overflow-hidden shadow-xs hover:shadow-md active:scale-95"
+                title="Select medicine photo from device gallery or files"
+              >
+                <div className="flex items-center justify-between w-full mb-1.5 sm:mb-2">
+                  <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-indigo-50 text-indigo-600 group-hover:bg-indigo-100 group-hover:text-indigo-700 flex items-center justify-center mx-auto sm:mx-0 transition-colors">
+                    <Upload className="w-4 h-4 sm:w-5 sm:h-5 text-indigo-600" />
+                  </div>
+                  <span className="hidden sm:inline-flex items-center text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200">
+                    Gallery
+                  </span>
+                </div>
+                <div className="w-full">
+                  <div className="text-[11px] sm:text-xs md:text-sm font-bold text-slate-900 group-hover:text-indigo-700 transition-colors truncate">
+                    Upload Image
+                  </div>
+                  <div className="text-[9px] sm:text-[11px] text-slate-500 mt-0.5 font-medium truncate">
+                    Device Files / Gallery
+                  </div>
+                </div>
+              </button>
+            </div>
+
             {/* Viewfinder Container */}
-            <div className="relative bg-slate-950 rounded-2xl text-white min-h-[320px] sm:min-h-[360px] h-[340px] sm:h-[380px] flex flex-col items-center justify-center overflow-hidden border border-slate-800 shadow-inner">
-              {/* Hidden file input for capturing barcode/label image */}
+            <div className="relative bg-slate-950 rounded-2xl text-white min-h-[300px] sm:min-h-[340px] h-[320px] sm:h-[360px] flex flex-col items-center justify-center overflow-hidden border border-slate-800 shadow-inner">
+              {/* Hidden file input for capturing medicine photo via camera */}
               <input
-                ref={fileInputRef}
+                ref={captureFileInputRef}
                 type="file"
                 accept="image/*"
                 capture="environment"
+                className="hidden"
+                onChange={handleImageUpload}
+              />
+
+              {/* Hidden file input for selecting existing medicine image from gallery/files */}
+              <input
+                ref={uploadFileInputRef}
+                type="file"
+                accept="image/*"
                 className="hidden"
                 onChange={handleImageUpload}
               />
@@ -850,7 +979,7 @@ export const ScannerPage: React.FC = () => {
 
                   {/* Overlaid Scanning Viewfinder Target */}
                   <div className="flex-1 flex flex-col items-center justify-center pointer-events-none">
-                    <div className="w-56 h-56 sm:w-64 sm:h-64 border-2 border-emerald-400/80 rounded-2xl relative shadow-[0_0_25px_rgba(16,185,129,0.35)] flex items-center justify-center">
+                    <div className="w-52 h-52 sm:w-60 sm:h-60 border-2 border-emerald-400/80 rounded-2xl relative shadow-[0_0_25px_rgba(16,185,129,0.35)] flex items-center justify-center">
                       {/* Corner Accents */}
                       <div className="absolute -top-1 -left-1 w-5 h-5 border-t-4 border-l-4 border-emerald-400 rounded-tl-lg" />
                       <div className="absolute -top-1 -right-1 w-5 h-5 border-t-4 border-r-4 border-emerald-400 rounded-tr-lg" />
@@ -866,8 +995,17 @@ export const ScannerPage: React.FC = () => {
                     </p>
                   </div>
 
-                  {/* Bottom spacer for balance */}
-                  <div className="h-6" />
+                  {/* Bottom Snap Live Frame Button */}
+                  <div className="flex items-center justify-center pointer-events-auto pb-1">
+                    <button
+                      type="button"
+                      onClick={captureCameraFrameAndRecognize}
+                      className="px-4 py-2 bg-teal-600/90 hover:bg-teal-500 active:scale-95 text-white text-xs font-bold rounded-xl border border-teal-400/40 backdrop-blur-md shadow-lg shadow-teal-900/40 flex items-center space-x-1.5 transition-all cursor-pointer"
+                    >
+                      <Sparkles className="w-3.5 h-3.5 text-teal-200" />
+                      <span>Snap Frame (AI OCR)</span>
+                    </button>
+                  </div>
 
                   {/* Scan Success Green Flash */}
                   {scanSuccessFlash && (
@@ -881,11 +1019,11 @@ export const ScannerPage: React.FC = () => {
                 </div>
               )}
 
-              {/* 2. When Camera is Inactive: Show Ready Viewfinder & Prominent Buttons */}
+              {/* 2. When Camera is Inactive: Show Ready Viewfinder */}
               {!isCameraActive && (
-                <div className="p-6 flex flex-col items-center text-center space-y-4 w-full z-10">
-                  <div className="relative w-36 h-36 border-2 border-dashed border-emerald-400/60 rounded-2xl flex flex-col items-center justify-center p-3 bg-emerald-950/20">
-                    <QrCode className="w-16 h-16 text-emerald-400/50" />
+                <div className="p-6 flex flex-col items-center text-center space-y-3.5 w-full z-10">
+                  <div className="relative w-28 h-28 sm:w-32 sm:h-32 border-2 border-dashed border-emerald-400/60 rounded-2xl flex flex-col items-center justify-center p-3 bg-emerald-950/20">
+                    <QrCode className="w-12 h-12 sm:w-14 sm:h-14 text-emerald-400/50" />
                     <div className="absolute inset-x-2 h-0.5 bg-gradient-to-r from-transparent via-emerald-400 to-transparent shadow-lg shadow-emerald-400 animate-pulse" />
                   </div>
 
@@ -894,8 +1032,8 @@ export const ScannerPage: React.FC = () => {
                       <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping mr-1" />
                       <span>Scanner Ready &bull; Multi-Format</span>
                     </div>
-                    <p className="text-[11px] text-slate-400 max-w-xs mx-auto">
-                      Align medicine box, strip barcode, or QR code within camera frame or snap a photo.
+                    <p className="text-[11px] text-slate-400 max-w-xs mx-auto leading-relaxed">
+                      Tap <strong className="text-emerald-300">Camera Scanner</strong> for live scan, or <strong className="text-teal-300">Capture / Upload</strong> for Gemini AI label OCR.
                     </p>
                   </div>
 
@@ -909,38 +1047,6 @@ export const ScannerPage: React.FC = () => {
                       </div>
                     </div>
                   )}
-
-                  {/* PROMINENT BUTTONS: OPEN CAMERA & CAPTURE IMAGE */}
-                  <div className="flex flex-col sm:flex-row items-center gap-2.5 w-full max-w-xs pt-1">
-                    <button
-                      type="button"
-                      onClick={() => startCamera()}
-                      disabled={cameraLoading}
-                      className="w-full py-3 px-5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 active:scale-95 text-white font-bold text-xs sm:text-sm rounded-xl shadow-lg shadow-emerald-600/40 flex items-center justify-center space-x-2 transition-all cursor-pointer border border-emerald-400/30"
-                    >
-                      {cameraLoading ? (
-                        <>
-                          <RefreshCw className="w-4 h-4 animate-spin" />
-                          <span>Starting Camera...</span>
-                        </>
-                      ) : (
-                        <>
-                          <Camera className="w-4 h-4" />
-                          <span>Open Camera Scanner</span>
-                        </>
-                      )}
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => fileInputRef.current?.click()}
-                      className="w-full sm:w-auto py-3 px-4 bg-gradient-to-r from-teal-700 to-emerald-700 hover:from-teal-600 hover:to-emerald-600 active:scale-95 text-white font-bold text-xs sm:text-sm rounded-xl shadow-lg shadow-teal-700/30 border border-teal-400/40 transition-all flex items-center justify-center space-x-2 cursor-pointer shrink-0"
-                      title="Capture photo to scan Batch No., Mfg Date, Expiry & MRP"
-                    >
-                      <Camera className="w-4 h-4 text-teal-200" />
-                      <span>Capture Image (OCR)</span>
-                    </button>
-                  </div>
                 </div>
               )}
             </div>
@@ -1072,6 +1178,26 @@ export const ScannerPage: React.FC = () => {
                     <span className="font-bold text-emerald-700 text-sm">{lookupResult.medicine.totalStock} units</span>
                   </div>
                 </div>
+
+                {/* Gemini AI OCR Extraction Banner */}
+                {lookupResult.extractedInfo && (lookupResult.extractedInfo.batchNumber || lookupResult.extractedInfo.expDate) && (
+                  <div className="p-3 bg-teal-50 border border-teal-200 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs text-teal-900">
+                    <div className="flex items-center space-x-2 min-w-0">
+                      <Sparkles className="w-4 h-4 text-teal-600 shrink-0" />
+                      <div className="truncate">
+                        <span className="font-bold">Gemini AI Extracted: </span>
+                        <span className="font-mono text-[11px] text-teal-800">
+                          Batch: <strong className="text-teal-950">{lookupResult.extractedInfo.batchNumber || "N/A"}</strong>
+                          {lookupResult.extractedInfo.mfgDate && <> &bull; Mfg: <strong>{lookupResult.extractedInfo.mfgDate}</strong></>}
+                          {lookupResult.extractedInfo.expDate && <> &bull; Exp: <strong className="text-rose-700">{lookupResult.extractedInfo.expDate}</strong></>}
+                        </span>
+                      </div>
+                    </div>
+                    <span className="self-start sm:self-auto text-[10px] font-bold px-2 py-0.5 rounded-full bg-teal-100 text-teal-800 border border-teal-300 shrink-0">
+                      Auto-Filled ✓
+                    </span>
+                  </div>
+                )}
 
                 {/* BATCH SECTION */}
                 <div className="p-4 bg-emerald-50/50 border border-emerald-200 rounded-xl space-y-3">
