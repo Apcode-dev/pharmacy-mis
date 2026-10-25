@@ -29,7 +29,7 @@ export const resolveApiBaseUrl = (): string => {
       (window as any).Capacitor?.isNativePlatform());
 
   if (isCapacitorNative) {
-    return import.meta.env.VITE_API_URL || "http://10.26.165.200:5001/api";
+    return import.meta.env.VITE_API_URL || "https://pharmacy-mis.onrender.com/api";
   }
 
   return import.meta.env.VITE_API_URL || "/api";

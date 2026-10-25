@@ -5,7 +5,7 @@
   "rewrites": [
     {
       "source": "/api/(.*)",
-      "destination": "https://project-45-11uq.onrender.com/api/$1"
+      "destination": "https://pharmacy-mis.onrender.com/api/$1"
     },
     {
       "source": "/(.*)",

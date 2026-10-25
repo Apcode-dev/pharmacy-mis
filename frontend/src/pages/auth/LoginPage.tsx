@@ -236,7 +236,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                     type="url"
                     value={customServerUrl}
                     onChange={(e) => setCustomServerUrl(e.target.value)}
-                    placeholder="e.g. http://10.26.165.200:5001/api"
+                    placeholder="e.g. https://pharmacy-mis.onrender.com/api"
                     className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-mono text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500"
                   />
                   <div className="mt-2 space-y-1">
@@ -244,8 +244,15 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                     <div className="flex flex-wrap gap-1.5">
                       <button
                         type="button"
+                        onClick={() => setCustomServerUrl("https://pharmacy-mis.onrender.com/api")}
+                        className="px-2 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 font-semibold rounded-md text-[11px] font-mono border border-emerald-300"
+                      >
+                        🌐 Cloud (pharmacy-mis.onrender.com)
+                      </button>
+                      <button
+                        type="button"
                         onClick={() => setCustomServerUrl("http://10.26.165.200:5001/api")}
-                        className="px-2 py-1 bg-slate-100 hover:bg-emerald-50 text-slate-700 hover:text-emerald-700 rounded-md text-[11px] font-mono border border-slate-200"
+                        className="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-md text-[11px] font-mono border border-slate-200"
                       >
                         📶 Wi-Fi (10.26.165.200:5001)
                       </button>
