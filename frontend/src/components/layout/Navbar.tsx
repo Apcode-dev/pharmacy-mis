@@ -276,7 +276,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           aria-label="Sign out"
         >
           <LogOut className="w-3.5 h-3.5 text-rose-600 shrink-0" />
-          <span className="hidden sm:inline text-xs font-bold text-rose-700">Logout</span>
+          <span className="text-[11px] sm:text-xs font-bold text-rose-700">Logout</span>
         </button>
       </div>
     </div>
