@@ -22,17 +22,13 @@ export const resolveApiBaseUrl = (): string => {
     return envUrl;
   }
 
-  const isCapacitorNative =
-    typeof window !== "undefined" &&
-    (window.location.protocol === "capacitor:" ||
-      window.location.protocol === "file:" ||
-      (window as any).Capacitor?.isNativePlatform());
-
-  if (isCapacitorNative) {
-    return import.meta.env.VITE_API_URL || "https://pharmacy-mis.onrender.com/api";
+  // If running on localhost / 127.0.0.1, use Vite dev proxy '/api'
+  if (typeof window !== "undefined" && (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1")) {
+    return "/api";
   }
 
-  return import.meta.env.VITE_API_URL || "/api";
+  // For Capacitor Native App, Vercel Web, or any production cloud host, default directly to Render
+  return "https://pharmacy-mis.onrender.com/api";
 };
 
 export const API_BASE_URL = resolveApiBaseUrl();
