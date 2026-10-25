@@ -94,6 +94,18 @@ export const syncInventoryAlerts = async (): Promise<{ created: number; resolved
     resolvedCount += res.deletedCount || 0;
   }
 
+  // 3b. Clean up orphaned alerts referencing deleted medicines
+  const activeMedIds = (await MedicineModel.find().select("_id")).map((m) => m._id);
+  const orphanResult = await AlertModel.deleteMany({
+    $or: [
+      { medicineId: { $nin: activeMedIds, $ne: null } },
+      { medicineId: null, batchId: null },
+    ],
+  });
+  if (orphanResult.deletedCount > 0) {
+    resolvedCount += orphanResult.deletedCount;
+  }
+
   // 4. Real-time Medicine Stock Audit & Refill Auto-Resolution
   const medicines = await MedicineModel.find({ isActive: true });
 
@@ -273,14 +285,33 @@ export const getAllAlerts = async (req: Request, res: Response, next: NextFuncti
       .populate("batchId", "batchNumber expiryDate quantity status")
       .sort({ isResolved: 1, createdAt: -1 });
 
+    // Calculate global counts across database so badges and KPI cards remain accurate
+    const [
+      totalCount,
+      unresolvedCount,
+      criticalCount,
+      warningCount,
+      lowStockCount,
+      expiredCount,
+      expiringSoonCount,
+    ] = await Promise.all([
+      AlertModel.countDocuments(),
+      AlertModel.countDocuments({ isResolved: false }),
+      AlertModel.countDocuments({ isResolved: false, severity: "CRITICAL" }),
+      AlertModel.countDocuments({ isResolved: false, severity: "WARNING" }),
+      AlertModel.countDocuments({ isResolved: false, type: "LOW_STOCK" }),
+      AlertModel.countDocuments({ isResolved: false, type: "EXPIRED" }),
+      AlertModel.countDocuments({ isResolved: false, type: "EXPIRING_SOON" }),
+    ]);
+
     const counts = {
-      total: alerts.length,
-      unresolved: alerts.filter((a) => !a.isResolved).length,
-      critical: alerts.filter((a) => !a.isResolved && a.severity === "CRITICAL").length,
-      warning: alerts.filter((a) => !a.isResolved && a.severity === "WARNING").length,
-      lowStock: alerts.filter((a) => !a.isResolved && a.type === "LOW_STOCK").length,
-      expired: alerts.filter((a) => !a.isResolved && a.type === "EXPIRED").length,
-      expiringSoon: alerts.filter((a) => !a.isResolved && a.type === "EXPIRING_SOON").length,
+      total: totalCount,
+      unresolved: unresolvedCount,
+      critical: criticalCount,
+      warning: warningCount,
+      lowStock: lowStockCount,
+      expired: expiredCount,
+      expiringSoon: expiringSoonCount,
     };
 
     res.status(200).json({ success: true, counts, data: alerts });

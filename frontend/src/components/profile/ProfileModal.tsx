@@ -268,12 +268,12 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose }) =
     if (!file) return;
 
     if (!file.type.startsWith("image/")) {
-      setErrorMsg("Kripya valid image file (.jpg, .png) select karein.");
+      setErrorMsg("Please select a valid image file (.jpg, .png).");
       return;
     }
 
     if (file.size > 2 * 1024 * 1024) {
-      setErrorMsg("Image size 2MB se kam hona chahiye.");
+      setErrorMsg("Image size must be less than 2MB.");
       return;
     }
 
@@ -293,17 +293,17 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose }) =
     setSuccessMsg(null);
 
     if (!name.trim()) {
-      setErrorMsg("Name khali nahi ho sakta.");
+      setErrorMsg("Name cannot be empty.");
       return;
     }
 
     if (showPasswordSection && newPassword) {
       if (newPassword.length < 6) {
-        setErrorMsg("New password kam se kam 6 characters ka hona chahiye.");
+        setErrorMsg("New password must be at least 6 characters long.");
         return;
       }
       if (newPassword !== confirmPassword) {
-        setErrorMsg("New password aur Confirm password match nahi ho rahe.");
+        setErrorMsg("New password and Confirm password do not match.");
         return;
       }
     }
@@ -326,8 +326,8 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose }) =
       const res = await api.put("/auth/profile", payload);
       if (res.data.success) {
         updateUser(res.data.data);
-        showToast.success("Profile safaltapoorvak update ho gayi!");
-        setSuccessMsg("Profile safaltapoorvak update ho gayi!");
+        showToast.success("Profile updated successfully!");
+        setSuccessMsg("Profile updated successfully!");
         // Reset password fields
         setCurrentPassword("");
         setNewPassword("");
@@ -339,12 +339,12 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose }) =
           onClose();
         }, 1200);
       } else {
-        const errMsg = res.data.error || "Profile update nahi ho saki.";
+        const errMsg = res.data.error || "Failed to update profile.";
         setErrorMsg(errMsg);
         showToast.error(errMsg);
       }
     } catch (err: any) {
-      const errMsg = err.response?.data?.error || err.message || "Profile update karte samay error aaya.";
+      const errMsg = err.response?.data?.error || err.message || "An error occurred while updating profile.";
       setErrorMsg(errMsg);
       showToast.error(errMsg);
     } finally {
@@ -419,7 +419,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose }) =
                 <p className="text-xs text-slate-500 truncate mt-0.5">{user?.email}</p>
                 <div className="mt-1.5 flex items-center space-x-2 text-[11px] text-emerald-700 font-medium">
                   <Sparkles className="w-3 h-3 text-emerald-600" />
-                  <span>Niche profile icon choose karein</span>
+                  <span>Choose a profile avatar below</span>
                 </div>
               </div>
             </div>
@@ -496,7 +496,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose }) =
                     required
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    placeholder="Aapka Poora Naam"
+                    placeholder="Full Name"
                     className="w-full pl-10 pr-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold text-slate-800 focus:bg-white focus:ring-2 focus:ring-emerald-500 focus:outline-none transition-all"
                   />
                 </div>

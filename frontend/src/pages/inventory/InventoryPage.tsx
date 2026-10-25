@@ -141,7 +141,7 @@ export const InventoryPage: React.FC = () => {
 
     try {
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        throw new Error("Aapka browser camera access support nahi karta. Please use Chrome, Safari or Edge.");
+        throw new Error("Your browser does not support camera access. Please use Chrome, Safari or Edge.");
       }
 
       let stream: MediaStream;
@@ -913,7 +913,7 @@ export const InventoryPage: React.FC = () => {
                   </div>
                   <h4 className="text-sm font-bold text-white mb-1">Camera Stream Inactive</h4>
                   <p className="text-xs text-slate-300 mb-4 max-w-xs leading-relaxed">
-                    {scannerError || "Camera permission prompt accept karein ya neeche button dabayein."}
+                    {scannerError || "Please grant camera permission or tap the button below."}
                   </p>
                   <button
                     type="button"

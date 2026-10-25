@@ -51,7 +51,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
         showToast.success(`Welcome back, ${response.data.data?.user?.name || "User"}!`);
         onLoginSuccess(response.data.data.user, response.data.data.token);
       } else {
-        const msg = response.data.error || "Kripya Admin se ID create karwaye and verify karaye.";
+        const msg = response.data.error || "Please contact the administrator to create and verify your account.";
         setError(msg);
         setPopupMessage(msg);
         setShowPopup(true);
@@ -61,7 +61,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
       const serverMsg =
         err.response?.data?.error ||
         err.response?.data?.message ||
-        "Account nahi mila! Kripya Admin se ID create karwaye and verify karaye.";
+        "Account not found! Please contact Hospital Admin to register and verify your credentials.";
       setError(serverMsg);
       setPopupMessage(serverMsg);
       setShowPopup(true);
@@ -107,10 +107,10 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                   </div>
 
                   <p className="text-xs text-slate-600 mb-6 leading-relaxed">
-                    Ye ID ya password ki problem <b>nahi</b> hai. Aapka mobile app backend server tak nahi pahunch pa raha hai.
+                    This is <b>not</b> an ID or password problem. The app is unable to reach the backend server.
                     <br />
                     <span className="font-semibold text-slate-700">
-                      Kripya check karein ki server PC par start hai, aur neeche diye button se sahi Server URL set karein.
+                      Please check that the server is online and ensure the correct Server URL is set below.
                     </span>
                   </p>
 
@@ -124,14 +124,14 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                       className="w-full py-2.5 px-4 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-semibold text-xs sm:text-sm rounded-xl transition-all shadow-md shadow-emerald-600/20 flex items-center justify-center space-x-2"
                     >
                       <Settings className="w-4 h-4" />
-                      <span>⚙️ Server URL / Settings Kholein</span>
+                      <span>⚙️ Configure Server URL & Settings</span>
                     </button>
                     <button
                       type="button"
                       onClick={() => setShowPopup(false)}
                       className="w-full py-2 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs rounded-xl transition-all"
                     >
-                      Band Karein (Close)
+                      Close
                     </button>
                   </div>
                 </div>
@@ -150,10 +150,10 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                   </div>
 
                   <p className="text-xs text-slate-500 mb-6 leading-relaxed">
-                    Aapka ID & Password match nahi hua ya selected role authorized nahi hai.
+                    Your credentials do not match or the selected role is unauthorized.
                     <br />
                     <span className="font-semibold text-slate-700">
-                      Kripya Hospital Admin se apni ID create karwaye aur account verify karaye.
+                      Please ask your Hospital Administrator to create and verify your user account.
                     </span>
                   </p>
 
@@ -162,7 +162,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                     onClick={() => setShowPopup(false)}
                     className="w-full py-2.5 px-4 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-semibold text-xs sm:text-sm rounded-xl transition-all shadow-md shadow-emerald-600/20"
                   >
-                    Theek Hai (Close)
+                    Close
                   </button>
                 </div>
               );

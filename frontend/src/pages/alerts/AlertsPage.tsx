@@ -33,6 +33,7 @@ export const AlertsPage: React.FC<AlertsPageProps> = ({ onNavigate, onAlertsUpda
     expiringSoon: 0,
   });
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [scanning, setScanning] = useState(false);
   const [resolvingId, setResolvingId] = useState<string | null>(null);
 
@@ -44,6 +45,7 @@ export const AlertsPage: React.FC<AlertsPageProps> = ({ onNavigate, onAlertsUpda
 
   const fetchAlerts = async () => {
     setLoading(true);
+    setError(null);
     try {
       const params = new URLSearchParams();
       params.append("isResolved", tab === "resolved" ? "true" : "false");
@@ -51,13 +53,16 @@ export const AlertsPage: React.FC<AlertsPageProps> = ({ onNavigate, onAlertsUpda
       if (typeFilter) params.append("type", typeFilter);
 
       const res = await api.get(`/alerts?${params.toString()}`);
-      if (res.data.success) {
-        setAlerts(res.data.data);
+      if (res.data && res.data.success) {
+        setAlerts(Array.isArray(res.data.data) ? res.data.data : []);
         if (res.data.counts) setCounts(res.data.counts);
         if (onAlertsUpdated) onAlertsUpdated();
+      } else {
+        setError(res.data?.message || "Failed to load incidents from server.");
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error("Failed to load alerts:", err);
+      setError(err?.response?.data?.error || err.message || "Failed to connect to backend server. Please verify network.");
     } finally {
       setLoading(false);
     }
@@ -115,14 +120,19 @@ export const AlertsPage: React.FC<AlertsPageProps> = ({ onNavigate, onAlertsUpda
     }
   };
 
-  const filteredAlerts = alerts.filter((a) => {
+  const filteredAlerts = (alerts || []).filter((a) => {
+    if (!a) return false;
     if (!search.trim()) return true;
     const q = search.toLowerCase();
+    const title = (a.title || "").toLowerCase();
+    const message = (a.message || "").toLowerCase();
+    const medName = (a.medicineId?.name || "").toLowerCase();
+    const batchNum = (a.batchId?.batchNumber || "").toLowerCase();
     return (
-      a.title?.toLowerCase().includes(q) ||
-      a.message?.toLowerCase().includes(q) ||
-      a.medicineId?.name?.toLowerCase().includes(q) ||
-      a.batchId?.batchNumber?.toLowerCase().includes(q)
+      title.includes(q) ||
+      message.includes(q) ||
+      medName.includes(q) ||
+      batchNum.includes(q)
     );
   });
 
@@ -282,6 +292,18 @@ export const AlertsPage: React.FC<AlertsPageProps> = ({ onNavigate, onAlertsUpda
           <div className="py-16 text-center text-slate-400 bg-white rounded-2xl border border-slate-200/80">
             <RefreshCw className="w-6 h-6 animate-spin mx-auto text-emerald-600 mb-2" />
             Loading incidents...
+          </div>
+        ) : error ? (
+          <div className="py-16 text-center text-slate-500 bg-white rounded-2xl border border-rose-200 shadow-sm p-6">
+            <AlertTriangle className="w-12 h-12 mx-auto text-rose-500 mb-3" />
+            <p className="text-base font-bold text-slate-800">Unable to Load Incidents</p>
+            <p className="text-xs text-rose-600 mt-1 max-w-md mx-auto">{error}</p>
+            <button
+              onClick={fetchAlerts}
+              className="mt-4 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-semibold shadow-xs"
+            >
+              Retry Loading
+            </button>
           </div>
         ) : filteredAlerts.length === 0 ? (
           <div className="py-16 text-center text-slate-400 bg-white rounded-2xl border border-slate-200/80">

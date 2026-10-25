@@ -124,12 +124,12 @@ export const SalesPage: React.FC = () => {
         if (code) {
           handleScannedCode(code);
         } else {
-          showToast.error("Label text se batch code extract nahi ho paya.");
+          showToast.error("Failed to extract batch code from label text.");
         }
       }
     } catch (err) {
       console.error("POS Vision Scan Error:", err);
-      showToast.error("Gemini AI Vision label read nahi kar paya.");
+      showToast.error("AI Vision scan could not read the medicine label.");
     } finally {
       setOcrLoading(false);
     }
@@ -250,7 +250,7 @@ export const SalesPage: React.FC = () => {
         if (isInsecureContext) {
           throw new Error("Web browsers require HTTPS or localhost for live camera streams. Over HTTP IP connections, please use 'Snap Photo / Upload Label' or access via http://localhost:5173");
         }
-        throw new Error("Aapka browser camera access support nahi karta. Use 'Snap Photo / Upload Label'.");
+        throw new Error("Your browser does not support live camera access. Please use 'Snap Photo / Upload Label'.");
       }
 
       let stream: MediaStream;
@@ -1578,7 +1578,7 @@ export const SalesPage: React.FC = () => {
                   </div>
                   <h4 className="text-sm font-bold text-white mb-1">Camera Stream Inactive</h4>
                   <p className="text-xs text-slate-300 mb-4 max-w-xs leading-relaxed">
-                    {scannerError || "Camera permission prompt accept karein ya photo upload karein."}
+                    {scannerError || "Please grant camera permission or upload a photo."}
                   </p>
                   <div className="flex items-center gap-2">
                     <button
@@ -1704,7 +1704,7 @@ export const SalesPage: React.FC = () => {
               <p className="text-xs text-slate-500 mt-1.5 leading-relaxed">
                 Scanned Code: <span className="font-mono font-bold text-slate-800">{itemNotFoundModal.code}</span>
                 <br />
-                Yeh item hospital inventory me available ya registered nahi hai.
+                This item is not registered or available in hospital inventory.
               </p>
             </div>
 

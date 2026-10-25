@@ -241,7 +241,7 @@ export const ScannerPage: React.FC = () => {
         if (isInsecureContext) {
           throw new Error("Web browsers require HTTPS or localhost for live camera stream. Over HTTP network, please use 'Capture Image / Upload Photo' or access via http://localhost:5173");
         }
-        throw new Error("Aapka browser live video camera access support nahi karta. Please use Chrome, Edge or Safari, or use 'Capture Image'.");
+        throw new Error("Your browser does not support live video camera access. Please use Chrome, Edge or Safari, or use 'Capture Image'.");
       }
 
       let stream: MediaStream;
@@ -487,11 +487,11 @@ export const ScannerPage: React.FC = () => {
         setInputCode(text);
         await handleLookup(text);
       } else {
-        setError("Label text read nahi ho paya. Kripya clear, well-lit photo snap/upload karein.");
+        setError("Could not read label text. Please capture or upload a clear, well-lit photo.");
       }
     } catch (err: any) {
       console.error("OCR recognition error:", err);
-      setError("AI Text Recognition error. Kripya manual batch code enter karein.");
+      setError("AI Text Recognition error. Please enter the batch code manually.");
     } finally {
       setOcrLoading(false);
       setLoading(false);
@@ -570,7 +570,7 @@ export const ScannerPage: React.FC = () => {
       // 3. Fallback: No Barcode/QR Code detected -> Run Tesseract OCR to read text printed on box/strip
       await recognizeImageText(file);
     } catch (err: any) {
-      setError("Barcode ya Label scan nahi ho paya. Kripya clear image upload karein ya manual code enter karein.");
+      setError("Barcode or label could not be scanned. Please upload a clear photo or enter the code manually.");
     }
   };
 
@@ -595,7 +595,7 @@ export const ScannerPage: React.FC = () => {
   const handleLookup = async (codeToSearch: string) => {
     const code = (codeToSearch || "").trim();
     if (!code) {
-      setError("Kripya barcode scan karein ya code number enter karein.");
+      setError("Please scan a barcode or enter the batch code.");
       return;
     }
 
@@ -895,7 +895,7 @@ export const ScannerPage: React.FC = () => {
                       <span>Scanner Ready &bull; Multi-Format</span>
                     </div>
                     <p className="text-[11px] text-slate-400 max-w-xs mx-auto">
-                      Dawa box, strip ya QR code ko phone camera se scan ya snap karne ke liye niche button dabayein.
+                      Align medicine box, strip barcode, or QR code within camera frame or snap a photo.
                     </p>
                   </div>
 
@@ -954,7 +954,7 @@ export const ScannerPage: React.FC = () => {
                   className="w-full py-2.5 px-3 bg-rose-50 hover:bg-rose-100 active:bg-rose-200 text-rose-700 border border-rose-300 rounded-xl text-xs font-bold flex items-center justify-center space-x-2 transition-colors cursor-pointer shadow-2xs"
                 >
                   <X className="w-4 h-4" />
-                  <span>Stop Camera / Band Karein</span>
+                  <span>Stop Camera</span>
                 </button>
               </div>
             )}
@@ -1237,7 +1237,7 @@ export const ScannerPage: React.FC = () => {
                   Ready to Scan or Lookup
                 </h3>
                 <p className="text-xs text-slate-500 leading-relaxed">
-                  Camera se barcode scan karein, photo upload karein ya left side me code enter karke Lookup karein. Scanned dawa ki batch details aur quick inward yahan show hogi.
+                  Scan a barcode with the camera, upload a label photo, or enter the code manually on the left. Scanned batch details and quick actions will appear here.
                 </p>
               </div>
               <div className="pt-2 flex flex-wrap items-center justify-center gap-2 text-[11px] text-slate-400">

@@ -110,7 +110,7 @@ export function App() {
           </div>
           <h2 className="text-lg font-bold text-slate-900 mb-1">Access Restricted</h2>
           <p className="text-xs text-slate-500 mb-4">
-            Security Notice: Aapka role ({user?.role}) is administrative module ({activeModule}) ke liye authorized nahi hai.
+            Security Notice: Your role ({user?.role}) is not authorized to access this administrative module ({activeModule}).
           </p>
           <button
             onClick={() => handleNavigate("dashboard")}
