@@ -90,9 +90,8 @@ export const Navbar: React.FC<NavbarProps> = ({
   };
 
   return (
-    <header className="shrink-0 w-full bg-white border-b border-slate-200 sticky top-0 z-40 shadow-xs safe-area-top select-none transition-all">
-      <div className="h-14 sm:h-16 w-full px-2.5 sm:px-6 flex items-center justify-between gap-2 max-w-full">
-        {/* Brand & Branch */}
+    <header className="h-14 sm:h-16 shrink-0 w-full bg-white border-b border-slate-200 sticky top-0 z-40 shadow-xs select-none transition-all px-2.5 sm:px-6 flex items-center justify-between gap-2 max-w-full">
+      {/* Brand & Branch */}
         <div className="flex items-center space-x-1.5 sm:space-x-4 min-w-0 shrink">
           {/* Mobile Hamburger Button */}
           {onToggleMobileMenu && (
@@ -151,7 +150,7 @@ export const Navbar: React.FC<NavbarProps> = ({
 
             {/* Notifications Popover Dropdown */}
             {isNotificationsOpen && (
-              <div className="fixed inset-x-3 top-16 sm:absolute sm:inset-x-auto sm:right-0 sm:top-auto sm:mt-2 w-auto sm:w-96 max-w-[calc(100vw-1.5rem)] sm:max-w-none bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden z-50 animate-in fade-in slide-in-from-top-2 duration-150">
+              <div className="fixed inset-x-3 top-15 sm:absolute sm:inset-x-auto sm:right-0 sm:top-auto sm:mt-2 w-auto sm:w-96 max-w-[calc(100vw-1.5rem)] sm:max-w-none bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden z-50 animate-in fade-in slide-in-from-top-2 duration-150">
               {/* Header */}
               <div className="px-4 py-3 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
                 <div className="flex items-center space-x-2">
@@ -279,7 +278,6 @@ export const Navbar: React.FC<NavbarProps> = ({
           <span className="text-[11px] sm:text-xs font-bold text-rose-700">Logout</span>
         </button>
       </div>
-    </div>
 
       {/* Profile Popup Modal */}
       <ProfileModal

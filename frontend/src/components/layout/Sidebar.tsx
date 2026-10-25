@@ -214,7 +214,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           />
 
           {/* Drawer Body */}
-          <aside className="relative w-72 max-w-[85vw] bg-slate-900 text-slate-300 h-full max-h-full flex flex-col justify-between shadow-2xl z-50 border-r border-slate-800 select-none overflow-hidden safe-area-top">
+          <aside className="relative w-72 max-w-[85vw] bg-slate-900 text-slate-300 h-full max-h-full flex flex-col justify-between shadow-2xl z-50 border-r border-slate-800 select-none overflow-hidden">
             {/* Drawer Header */}
             <div className="px-4 py-3 sm:py-4 border-b border-slate-800 flex items-center justify-between shrink-0">
               <div className="flex items-center space-x-2.5">
