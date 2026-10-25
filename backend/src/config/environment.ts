@@ -1,8 +1,14 @@
 import dotenv from "dotenv";
+import path from "path";
+import { fileURLToPath } from "url";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+dotenv.config({ path: path.resolve(__dirname, "../../../.env") });
+dotenv.config({ path: path.resolve(__dirname, "../../.env") });
 dotenv.config();
 
 export const ENV = {
-  PORT: parseInt(process.env.PORT || "10000", 10),
+  PORT: parseInt(process.env.PORT || (process.env.NODE_ENV === "production" ? "10000" : "5001"), 10),
   NODE_ENV: process.env.NODE_ENV || "development",
   MONGODB_URI: process.env.MONGODB_URI || "mongodb://127.0.0.1:27017/medical_inventory",
   JWT_SECRET: process.env.JWT_SECRET || "mis_production_jwt_secure_token_key_2026",

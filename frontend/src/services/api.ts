@@ -29,10 +29,10 @@ export const resolveApiBaseUrl = (): string => {
       (window as any).Capacitor?.isNativePlatform());
 
   if (isCapacitorNative) {
-    return "/api";
+    return import.meta.env.VITE_API_URL || "http://10.26.165.200:5001/api";
   }
 
-  return "/api";
+  return import.meta.env.VITE_API_URL || "/api";
 };
 
 export const API_BASE_URL = resolveApiBaseUrl();
@@ -42,6 +42,8 @@ export const api = axios.create({
   timeout: 15000,
   headers: {
     "Content-Type": "application/json",
+    "Bypass-Tunnel-Reminder": "true",
+    "ngrok-skip-browser-warning": "true",
   },
 });
 

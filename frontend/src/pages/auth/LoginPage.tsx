@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { api } from "../../services/api.js";
 import { showToast } from "../../utils/toast.js";
-import { Activity, ShieldCheck, Lock, Mail, Briefcase, ArrowRight, AlertCircle, X, Settings, ShieldAlert } from "lucide-react";
+import { Activity, ShieldCheck, Lock, Mail, Briefcase, ArrowRight, AlertCircle, X, Settings, ShieldAlert, WifiOff } from "lucide-react";
 import { resolveApiBaseUrl } from "../../services/api.js";
 
 interface LoginPageProps {
@@ -85,35 +85,88 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
               <X className="w-5 h-5" />
             </button>
 
-            <div className="flex flex-col items-center text-center">
-              <div className="w-14 h-14 rounded-2xl bg-rose-100 text-rose-600 flex items-center justify-center mb-4 ring-8 ring-rose-50 shadow-sm">
-                <ShieldAlert className="w-8 h-8" />
-              </div>
+            {(() => {
+              const isConnectionError =
+                popupMessage.includes("Server Connection Failed") ||
+                popupMessage.includes("Unable to reach") ||
+                popupMessage.includes("Timed Out") ||
+                popupMessage.includes("Network Error");
 
-              <h3 className="text-lg font-bold text-slate-900 mb-2">
-                Verification Required / Access Denied
-              </h3>
+              return isConnectionError ? (
+                <div className="flex flex-col items-center text-center">
+                  <div className="w-14 h-14 rounded-2xl bg-amber-100 text-amber-600 flex items-center justify-center mb-4 ring-8 ring-amber-50 shadow-sm">
+                    <WifiOff className="w-8 h-8" />
+                  </div>
 
-              <div className="p-3.5 bg-amber-50 border border-amber-200 rounded-xl text-xs sm:text-sm text-amber-900 font-semibold mb-3 w-full text-left leading-relaxed">
-                ⚠️ {popupMessage}
-              </div>
+                  <h3 className="text-lg font-bold text-slate-900 mb-2">
+                    Server Connection Error
+                  </h3>
 
-              <p className="text-xs text-slate-500 mb-6 leading-relaxed">
-                Aapka ID & Password match nahi hua ya selected role authorized nahi hai.
-                <br />
-                <span className="font-semibold text-slate-700">
-                  Kripya Hospital Admin se apni ID create karwaye aur account verify karaye.
-                </span>
-              </p>
+                  <div className="p-3.5 bg-rose-50 border border-rose-200 rounded-xl text-xs sm:text-sm text-rose-900 font-semibold mb-3 w-full text-left leading-relaxed">
+                    ⚠️ {popupMessage}
+                  </div>
 
-              <button
-                type="button"
-                onClick={() => setShowPopup(false)}
-                className="w-full py-2.5 px-4 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-semibold text-xs sm:text-sm rounded-xl transition-all shadow-md shadow-emerald-600/20"
-              >
-                Theek Hai (Close)
-              </button>
-            </div>
+                  <p className="text-xs text-slate-600 mb-6 leading-relaxed">
+                    Ye ID ya password ki problem <b>nahi</b> hai. Aapka mobile app backend server tak nahi pahunch pa raha hai.
+                    <br />
+                    <span className="font-semibold text-slate-700">
+                      Kripya check karein ki server PC par start hai, aur neeche diye button se sahi Server URL set karein.
+                    </span>
+                  </p>
+
+                  <div className="flex flex-col gap-2 w-full">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowPopup(false);
+                        setShowServerModal(true);
+                      }}
+                      className="w-full py-2.5 px-4 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-semibold text-xs sm:text-sm rounded-xl transition-all shadow-md shadow-emerald-600/20 flex items-center justify-center space-x-2"
+                    >
+                      <Settings className="w-4 h-4" />
+                      <span>⚙️ Server URL / Settings Kholein</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setShowPopup(false)}
+                      className="w-full py-2 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs rounded-xl transition-all"
+                    >
+                      Band Karein (Close)
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex flex-col items-center text-center">
+                  <div className="w-14 h-14 rounded-2xl bg-rose-100 text-rose-600 flex items-center justify-center mb-4 ring-8 ring-rose-50 shadow-sm">
+                    <ShieldAlert className="w-8 h-8" />
+                  </div>
+
+                  <h3 className="text-lg font-bold text-slate-900 mb-2">
+                    Verification Required / Access Denied
+                  </h3>
+
+                  <div className="p-3.5 bg-amber-50 border border-amber-200 rounded-xl text-xs sm:text-sm text-amber-900 font-semibold mb-3 w-full text-left leading-relaxed">
+                    ⚠️ {popupMessage}
+                  </div>
+
+                  <p className="text-xs text-slate-500 mb-6 leading-relaxed">
+                    Aapka ID & Password match nahi hua ya selected role authorized nahi hai.
+                    <br />
+                    <span className="font-semibold text-slate-700">
+                      Kripya Hospital Admin se apni ID create karwaye aur account verify karaye.
+                    </span>
+                  </p>
+
+                  <button
+                    type="button"
+                    onClick={() => setShowPopup(false)}
+                    className="w-full py-2.5 px-4 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-semibold text-xs sm:text-sm rounded-xl transition-all shadow-md shadow-emerald-600/20"
+                  >
+                    Theek Hai (Close)
+                  </button>
+                </div>
+              );
+            })()}
           </div>
         </div>
       )}
@@ -183,7 +236,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                     type="url"
                     value={customServerUrl}
                     onChange={(e) => setCustomServerUrl(e.target.value)}
-                    placeholder="e.g. http://10.93.198.200:5001/api"
+                    placeholder="e.g. http://10.26.165.200:5001/api"
                     className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-mono text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500"
                   />
                   <div className="mt-2 space-y-1">
@@ -191,10 +244,10 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                     <div className="flex flex-wrap gap-1.5">
                       <button
                         type="button"
-                        onClick={() => setCustomServerUrl("http://10.93.198.200:5001/api")}
+                        onClick={() => setCustomServerUrl("http://10.26.165.200:5001/api")}
                         className="px-2 py-1 bg-slate-100 hover:bg-emerald-50 text-slate-700 hover:text-emerald-700 rounded-md text-[11px] font-mono border border-slate-200"
                       >
-                        📶 Wi-Fi (10.93.198.200)
+                        📶 Wi-Fi (10.26.165.200:5001)
                       </button>
                     </div>
                   </div>
