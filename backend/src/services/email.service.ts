@@ -43,7 +43,8 @@ export async function getAdminRecipientEmails(): Promise<{ name: string; email: 
       .map((u) => ({
         name: u.name || `${u.role} Member`,
         email: u.email.trim(),
-      }));
+      }))
+      .filter((u) => u.email.includes("@") && !u.email.endsWith(".local") && !u.email.endsWith(".test"));
 
     if (activeRecipients.length > 0) {
       return activeRecipients;
@@ -59,7 +60,8 @@ export async function getAdminRecipientEmails(): Promise<{ name: string; email: 
       .map((u) => ({
         name: u.name || "Team Member",
         email: u.email.trim(),
-      }));
+      }))
+      .filter((u) => u.email.includes("@") && !u.email.endsWith(".local") && !u.email.endsWith(".test"));
 
     if (activeUsers.length > 0) {
       return activeUsers;
