@@ -1,5 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useAuth } from "../../store/authStore.js";
+import { api } from "../../services/api.js";
 import { 
   Building2, 
   Bell, 
@@ -10,6 +11,10 @@ import {
   Menu,
   X,
   ChevronDown,
+  AlertTriangle,
+  Clock,
+  ArrowRight,
+  CheckCircle2,
 } from "lucide-react";
 import { ProfileModal, UserAvatarDisplay } from "../profile/ProfileModal.js";
 
@@ -50,9 +55,39 @@ export const Navbar: React.FC<NavbarProps> = ({
     }
   };
 
-  const normalizedRole = (user?.role || "").toUpperCase().trim();
-  // Pharmacist, Manager, Staff cannot access Monitoring/Alerts
-  const isRestrictedRole = ["PHARMACIST", "MANAGER", "INVENTORY_MANAGER", "STAFF"].includes(normalizedRole);
+  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+  const [recentAlerts, setRecentAlerts] = useState<any[]>([]);
+  const [loadingAlerts, setLoadingAlerts] = useState(false);
+  const notifRef = useRef<HTMLDivElement>(null);
+
+  // Close notifications popover on click outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (notifRef.current && !notifRef.current.contains(event.target as Node)) {
+        setIsNotificationsOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const toggleNotifications = async () => {
+    const nextState = !isNotificationsOpen;
+    setIsNotificationsOpen(nextState);
+    if (nextState) {
+      setLoadingAlerts(true);
+      try {
+        const res = await api.get("/alerts?isResolved=false");
+        if (res.data?.success) {
+          setRecentAlerts((res.data.data || []).slice(0, 5));
+        }
+      } catch {
+        // ignore
+      } finally {
+        setLoadingAlerts(false);
+      }
+    }
+  };
 
   return (
     <header className="h-16 shrink-0 w-full bg-white border-b border-slate-200 px-3 sm:px-6 flex items-center justify-between sticky top-0 z-30 shadow-xs">
@@ -92,12 +127,18 @@ export const Navbar: React.FC<NavbarProps> = ({
 
       {/* Right User actions */}
       <div className="flex items-center space-x-3 sm:space-x-4">
-        {/* Alerts quick button (Admin & Dr only) */}
-        {!isRestrictedRole && (
+        {/* Interactive Alerts & Notifications Bell Button (Visible to all staff) */}
+        <div className="relative" ref={notifRef}>
           <button
-            onClick={() => onModuleChange && onModuleChange("alerts")}
-            className="relative p-2 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-xl transition-colors cursor-pointer"
-            title={alertsCount > 0 ? `${alertsCount} Unresolved Alert(s)` : "No Active Alerts"}
+            type="button"
+            onClick={toggleNotifications}
+            className={`relative p-2 rounded-xl transition-all cursor-pointer ${
+              isNotificationsOpen 
+                ? "bg-emerald-50 text-emerald-700 ring-2 ring-emerald-400" 
+                : "text-slate-500 hover:text-slate-800 hover:bg-slate-100"
+            }`}
+            title={alertsCount > 0 ? `${alertsCount} Unresolved Alert(s) - Click to view` : "No Active Alerts"}
+            aria-label="Notifications"
           >
             <Bell className="w-5 h-5" />
             {alertsCount > 0 && (
@@ -106,7 +147,88 @@ export const Navbar: React.FC<NavbarProps> = ({
               </span>
             )}
           </button>
-        )}
+
+          {/* Notifications Popover Dropdown */}
+          {isNotificationsOpen && (
+            <div className="absolute right-0 mt-2 w-80 sm:w-96 bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden z-50 animate-in fade-in slide-in-from-top-2 duration-150">
+              {/* Header */}
+              <div className="px-4 py-3 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <div className="w-2 h-2 rounded-full bg-rose-500 animate-ping" />
+                  <span className="font-bold text-sm text-slate-900">Notifications & Alerts</span>
+                </div>
+                {alertsCount > 0 ? (
+                  <span className="text-[11px] font-bold px-2 py-0.5 bg-rose-100 text-rose-700 rounded-full border border-rose-200">
+                    {alertsCount} Active
+                  </span>
+                ) : (
+                  <span className="text-[11px] font-semibold text-emerald-600 flex items-center gap-1">
+                    <CheckCircle2 className="w-3.5 h-3.5" /> Healthy
+                  </span>
+                )}
+              </div>
+
+              {/* Alerts List */}
+              <div className="max-h-72 overflow-y-auto divide-y divide-slate-100">
+                {loadingAlerts ? (
+                  <div className="p-6 text-center text-xs text-slate-400">Loading alerts...</div>
+                ) : recentAlerts.length > 0 ? (
+                  recentAlerts.map((alert) => (
+                    <div
+                      key={alert._id}
+                      onClick={() => {
+                        setIsNotificationsOpen(false);
+                        if (onModuleChange) onModuleChange("alerts");
+                      }}
+                      className="p-3 hover:bg-slate-50 transition-colors cursor-pointer flex items-start space-x-3 text-left group"
+                    >
+                      <div className="shrink-0 mt-0.5">
+                        {alert.severity === "CRITICAL" ? (
+                          <div className="w-7 h-7 rounded-lg bg-rose-100 text-rose-600 flex items-center justify-center">
+                            <AlertTriangle className="w-4 h-4" />
+                          </div>
+                        ) : (
+                          <div className="w-7 h-7 rounded-lg bg-amber-100 text-amber-600 flex items-center justify-center">
+                            <Clock className="w-4 h-4" />
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-semibold text-slate-900 truncate group-hover:text-emerald-700 transition-colors">
+                          {alert.title}
+                        </p>
+                        <p className="text-[11px] text-slate-500 line-clamp-2 mt-0.5 leading-snug">
+                          {alert.message}
+                        </p>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="p-6 text-center">
+                    <CheckCircle2 className="w-8 h-8 text-emerald-500 mx-auto mb-2" />
+                    <p className="text-xs font-medium text-slate-700">No Unresolved Alerts</p>
+                    <p className="text-[11px] text-slate-400 mt-0.5">All stock and expiration checks are normal.</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Footer */}
+              <div className="p-2.5 bg-slate-50 border-t border-slate-200 text-center">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsNotificationsOpen(false);
+                    if (onModuleChange) onModuleChange("alerts");
+                  }}
+                  className="w-full py-1.5 px-3 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white rounded-xl text-xs font-semibold flex items-center justify-center space-x-1.5 transition-colors shadow-2xs cursor-pointer"
+                >
+                  <span>Open Alerts Center</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
 
         {/* User profile card - Click to open Profile & Avatar Settings */}
         <button

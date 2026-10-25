@@ -103,17 +103,19 @@ export const Sidebar: React.FC<SidebarProps> = ({
   };
 
   const normalizedRole = (userRole || "").toUpperCase().trim();
-  // Pharmacist, Manager, and Staff cannot view Monitoring & Insights and Administration
-  const isRestrictedRole = ["PHARMACIST", "MANAGER", "INVENTORY_MANAGER", "STAFF"].includes(normalizedRole);
+  const isAdmin = ["ADMIN", "HOSPITAL_ADMIN", "DIRECTOR"].includes(normalizedRole);
 
-  const visibleSections = navSections.filter((section) => {
-    if (isRestrictedRole) {
-      if (section.title === "Monitoring & Insights" || section.title === "Administration") {
-        return false;
+  const visibleSections = navSections
+    .map((section) => {
+      if (!isAdmin) {
+        return {
+          ...section,
+          items: section.items.filter((item: any) => !item.adminOnly),
+        };
       }
-    }
-    return true;
-  });
+      return section;
+    })
+    .filter((section) => section.items.length > 0);
 
   const navContent = (
     <>

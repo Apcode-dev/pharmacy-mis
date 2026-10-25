@@ -213,27 +213,46 @@ export const syncInventoryAlerts = async (): Promise<{ created: number; resolved
     }
   }
 
-  // 5. Send Brevo email notifications for unsent active alerts
-  try {
-    const unsentAlerts = await AlertModel.find({ emailSent: { $ne: true }, isResolved: false });
-    for (const alert of unsentAlerts) {
-      const sent = await sendStockAlertToAllUsers({
-        title: alert.title,
-        message: alert.message,
-        severity: alert.severity,
-        type: alert.type,
-      });
-      if (sent) {
-        alert.emailSent = true;
-        await alert.save();
-      }
-    }
-  } catch (err) {
-    console.error("[AlertsController] Failed during email notification step:", err);
-  }
+  // 5. Background throttled email dispatch (Non-blocking, max once per 10 mins)
+  triggerBackgroundEmailDispatch();
 
   return { created: createdCount, resolved: resolvedCount };
 };
+
+let lastEmailAttempt = 0;
+const EMAIL_COOLDOWN_MS = 10 * 60 * 1000; // 10 minutes
+
+function triggerBackgroundEmailDispatch(): void {
+  const now = Date.now();
+  if (now - lastEmailAttempt < EMAIL_COOLDOWN_MS) {
+    return;
+  }
+  lastEmailAttempt = now;
+
+  // Non-blocking background worker
+  setImmediate(async () => {
+    try {
+      const unsentAlerts = await AlertModel.find({ emailSent: { $ne: true }, isResolved: false }).limit(5);
+      for (const alert of unsentAlerts) {
+        const sent = await sendStockAlertToAllUsers({
+          title: alert.title,
+          message: alert.message,
+          severity: alert.severity,
+          type: alert.type,
+        });
+        if (sent) {
+          alert.emailSent = true;
+          await alert.save();
+        } else {
+          // If sending fails (e.g. Brevo IP restriction or no network), stop retrying this cycle
+          break;
+        }
+      }
+    } catch (err) {
+      console.error("[AlertsController] Background email dispatch error:", err);
+    }
+  });
+}
 
 export const getAllAlerts = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {

@@ -18,6 +18,7 @@ import { AuditPage } from "./pages/audit/AuditPage.js";
 import { SettingsPage } from "./pages/settings/SettingsPage.js";
 import { ModulePlaceholder } from "./pages/ModulePlaceholder.js";
 import { api } from "./services/api.js";
+import { showToast } from "./utils/toast.js";
 
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -48,11 +49,25 @@ export function App() {
     setIsMobileMenuOpen,
   });
 
+  const hasNotifiedRef = React.useRef(false);
+
   const fetchAlertsCount = async () => {
     try {
       const res = await api.get("/alerts?isResolved=false");
       if (res.data?.success) {
-        setAlertsCount(res.data.counts?.unresolved ?? 0);
+        const count = res.data.counts?.unresolved ?? 0;
+        setAlertsCount(count);
+
+        // Show in-app notification banner on initial load or critical alert discovery
+        if (count > 0 && !hasNotifiedRef.current) {
+          hasNotifiedRef.current = true;
+          const crit = res.data.counts?.critical ?? 0;
+          if (crit > 0) {
+            showToast.error(`🚨 ${crit} Critical Alert(s): Expired or Depleted medicines! Click Bell to view.`);
+          } else {
+            showToast.warning(`⚠️ ${count} Active Inventory Alert(s) require attention.`);
+          }
+        }
       }
     } catch {
       // ignore
@@ -82,12 +97,12 @@ export function App() {
   };
 
   const normalizedRole = (user?.role || "").toUpperCase().trim();
-  // Pharmacist, Manager, and Staff cannot access Monitoring & Insights or Administration
-  const isRestrictedRole = ["PHARMACIST", "MANAGER", "INVENTORY_MANAGER", "STAFF"].includes(normalizedRole);
-  const isRestrictedModule = ["alerts", "reports", "users", "audit", "settings"].includes(activeModule);
+  const isAdmin = ["ADMIN", "HOSPITAL_ADMIN", "DIRECTOR"].includes(normalizedRole);
+  // Only User Management and Security Audit are strictly reserved for Administrators. Alerts & Reports are open to all pharmacy staff.
+  const isRestrictedModule = !isAdmin && ["users", "audit"].includes(activeModule);
 
   const renderModuleContent = () => {
-    if (isRestrictedRole && isRestrictedModule) {
+    if (isRestrictedModule) {
       return (
         <div className="p-8 bg-white rounded-2xl border border-rose-200 text-center max-w-lg mx-auto mt-12 shadow-sm">
           <div className="w-12 h-12 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center mx-auto mb-3">
@@ -95,7 +110,7 @@ export function App() {
           </div>
           <h2 className="text-lg font-bold text-slate-900 mb-1">Access Restricted</h2>
           <p className="text-xs text-slate-500 mb-4">
-            Security Notice: Aapka role ({user?.role}) is module (Monitoring & Insights / Administration) ke liye authorized nahi hai.
+            Security Notice: Aapka role ({user?.role}) is administrative module ({activeModule}) ke liye authorized nahi hai.
           </p>
           <button
             onClick={() => handleNavigate("dashboard")}
