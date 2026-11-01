@@ -100,16 +100,48 @@ export const SalesPage: React.FC = () => {
   const lastScannedTimeRef = useRef<number>(0);
   const [ocrLoading, setOcrLoading] = useState(false);
 
-  const imageToBase64 = (source: File | Blob | HTMLCanvasElement): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      if (source instanceof HTMLCanvasElement) {
-        resolve(source.toDataURL("image/jpeg", 0.85));
-        return;
-      }
-      const reader = new FileReader();
-      reader.onloadend = () => resolve(reader.result as string);
-      reader.onerror = reject;
-      reader.readAsDataURL(source);
+  const imageToBase64 = async (source: File | Blob | HTMLCanvasElement): Promise<string> => {
+    if (source instanceof HTMLCanvasElement) {
+      return source.toDataURL("image/jpeg", 0.85);
+    }
+
+    return new Promise((resolve) => {
+      const url = URL.createObjectURL(source);
+      const img = new Image();
+      img.onload = () => {
+        URL.revokeObjectURL(url);
+        const maxDim = 1600;
+        let w = img.width;
+        let h = img.height;
+        if (w > maxDim || h > maxDim) {
+          if (w > h) {
+            h = Math.round((h * maxDim) / w);
+            w = maxDim;
+          } else {
+            w = Math.round((w * maxDim) / h);
+            h = maxDim;
+          }
+        }
+        const canvas = document.createElement("canvas");
+        canvas.width = Math.max(1, w);
+        canvas.height = Math.max(1, h);
+        const ctx = canvas.getContext("2d");
+        if (ctx) {
+          ctx.drawImage(img, 0, 0, w, h);
+          resolve(canvas.toDataURL("image/jpeg", 0.85));
+        } else {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(reader.result as string);
+          reader.readAsDataURL(source);
+        }
+      };
+      img.onerror = () => {
+        URL.revokeObjectURL(url);
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result as string);
+        reader.readAsDataURL(source);
+      };
+      img.src = url;
     });
   };
 
@@ -117,17 +149,67 @@ export const SalesPage: React.FC = () => {
     setOcrLoading(true);
     try {
       const base64 = await imageToBase64(imageSource);
-      const visionRes = await api.post("/scanner/vision-scan", { imageBase64: base64 });
-      if (visionRes.data.success && visionRes.data.data) {
-        const data = visionRes.data.data;
-        const code = data.batchNumber || data.extractedInfo?.batchNumber || data.code || "";
-        if (code) {
-          handleScannedCode(code);
-        } else {
-          showToast.error("Failed to extract batch code from label text.");
+      let extractedBatch: string | null = null;
+
+      try {
+        const visionRes = await api.post("/scanner/vision-scan", { imageBase64: base64 }, { timeout: 15000 });
+        if (visionRes.data?.success && visionRes.data?.data) {
+          const d = visionRes.data.data;
+          extractedBatch = d.batchNumber || d.extractedInfo?.batchNumber || d.code || null;
         }
+      } catch (be) {
+        console.warn("Backend vision-scan for POS unreachable, trying direct Gemini...", be);
+      }
+
+      if (!extractedBatch) {
+        const cleanBase64 = base64.replace(/^data:image\/\w+;base64,/, "");
+        const apiKey = (import.meta as any).env?.VITE_GEMINI_API_KEY || "";
+        try {
+          const directRes = await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "X-goog-api-key": apiKey,
+            },
+            body: JSON.stringify({
+              contents: [
+                {
+                  parts: [
+                    {
+                      text: 'Extract strictly and ONLY the medicine "batchNumber". Common labels: "Batch No", "B.No", "Lot No". If not clearly visible, return null. Return JSON: {"batchNumber": string | null}',
+                    },
+                    {
+                      inline_data: {
+                        mime_type: "image/jpeg",
+                        data: cleanBase64,
+                      },
+                    },
+                  ],
+                },
+              ],
+              generationConfig: {
+                response_mime_type: "application/json",
+              },
+            }),
+          });
+          if (directRes.ok) {
+            const dj = await directRes.json();
+            const txt = dj?.candidates?.[0]?.content?.parts?.[0]?.text || "";
+            const clean = txt.replace(/```json/gi, "").replace(/```/g, "").trim();
+            const parsed = JSON.parse(clean);
+            if (parsed?.batchNumber && !/^(none|null|n\/a|na|nil)$/i.test(parsed.batchNumber)) {
+              extractedBatch = String(parsed.batchNumber).trim();
+            }
+          }
+        } catch (de) {
+          console.warn("Direct POS OCR fallback error:", de);
+        }
+      }
+
+      if (extractedBatch) {
+        handleScannedCode(extractedBatch);
       } else {
-        showToast.error(visionRes.data.message || "Required data not found. Please upload a clearer image.");
+        showToast.error("Required data not found. Please upload a clearer image.");
       }
     } catch (err) {
       console.error("POS Vision Scan Error:", err);

@@ -427,16 +427,48 @@ export const ScannerPage: React.FC = () => {
     });
   };
 
-  const imageToBase64 = (source: File | Blob | HTMLCanvasElement): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      if (source instanceof HTMLCanvasElement) {
-        resolve(source.toDataURL("image/jpeg", 0.85));
-        return;
-      }
-      const reader = new FileReader();
-      reader.onloadend = () => resolve(reader.result as string);
-      reader.onerror = reject;
-      reader.readAsDataURL(source);
+  const imageToBase64 = async (source: File | Blob | HTMLCanvasElement): Promise<string> => {
+    if (source instanceof HTMLCanvasElement) {
+      return source.toDataURL("image/jpeg", 0.85);
+    }
+
+    return new Promise((resolve) => {
+      const url = URL.createObjectURL(source);
+      const img = new Image();
+      img.onload = () => {
+        URL.revokeObjectURL(url);
+        const maxDim = 1600;
+        let w = img.width;
+        let h = img.height;
+        if (w > maxDim || h > maxDim) {
+          if (w > h) {
+            h = Math.round((h * maxDim) / w);
+            w = maxDim;
+          } else {
+            w = Math.round((w * maxDim) / h);
+            h = maxDim;
+          }
+        }
+        const canvas = document.createElement("canvas");
+        canvas.width = Math.max(1, w);
+        canvas.height = Math.max(1, h);
+        const ctx = canvas.getContext("2d");
+        if (ctx) {
+          ctx.drawImage(img, 0, 0, w, h);
+          resolve(canvas.toDataURL("image/jpeg", 0.85));
+        } else {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(reader.result as string);
+          reader.readAsDataURL(source);
+        }
+      };
+      img.onerror = () => {
+        URL.revokeObjectURL(url);
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result as string);
+        reader.readAsDataURL(source);
+      };
+      img.src = url;
     });
   };
 
@@ -466,6 +498,109 @@ export const ScannerPage: React.FC = () => {
     return iso;
   };
 
+  // Direct Gemini fallback extraction (if backend is sleeping or unreachable)
+  const extractMedicineDataDirect = async (cleanBase64: string): Promise<{
+    success: boolean;
+    data: { batchNumber: string | null; manufacturingDate: string | null; expiryDate: string | null };
+    foundFields: ("batchNumber" | "manufacturingDate" | "expiryDate")[];
+    message: string;
+  }> => {
+    const candidateModels = ["gemini-flash-latest", "gemini-3.8-flash", "gemini-flash-lite-latest"];
+    const apiKey = (import.meta as any).env?.VITE_GEMINI_API_KEY || "";
+
+    for (const model of candidateModels) {
+      try {
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-goog-api-key": apiKey,
+          },
+          body: JSON.stringify({
+            contents: [
+              {
+                parts: [
+                  {
+                    text: `You are a specialized pharmaceutical vision OCR assistant. Analyze this medicine packaging image (strip, box, bottle, or packaging).
+Extract strictly and ONLY these three fields:
+1. "batchNumber": The medicine batch or lot number (e.g. AB12345, ST25G9253). Common labels: "Batch No", "Batch Number", "B.No", "Lot No", "LOT", "Batch". Preserve letters, digits, hyphens, and slashes exactly as printed. Omit prefix words. NEVER confuse with barcodes, prices, or license numbers. If not clearly visible, return null.
+2. "manufacturingDate": The manufacturing date (e.g. MFG, MFD, Manufactured). If visible, return in DD/MM/YYYY format (or 01/MM/YYYY if only month and year are printed). If not clearly visible, return null.
+3. "expiryDate": The expiration or use-before date (e.g. EXP, Expiry, Use Before). If visible, return in DD/MM/YYYY format (or 01/MM/YYYY if only month and year are printed). If not clearly visible, return null.
+
+CRITICAL RULES:
+- DO NOT extract medicine name, brand name, composition, MRP, price, quantity, dosage, manufacturer, or any other field.
+- Extract ONLY information that is explicitly and clearly visible in the image.
+- DO NOT guess, infer, or fabricate values. If a field is not printed, return null.`,
+                  },
+                  {
+                    inline_data: {
+                      mime_type: "image/jpeg",
+                      data: cleanBase64,
+                    },
+                  },
+                ],
+              },
+            ],
+            generationConfig: {
+              response_mime_type: "application/json",
+              response_schema: {
+                type: "OBJECT",
+                properties: {
+                  batchNumber: { type: "STRING", nullable: true },
+                  manufacturingDate: { type: "STRING", nullable: true },
+                  expiryDate: { type: "STRING", nullable: true },
+                },
+                required: ["batchNumber", "manufacturingDate", "expiryDate"],
+              },
+            },
+          }),
+        });
+
+        if (!response.ok) continue;
+        const resJson = await response.json();
+        const text = resJson?.candidates?.[0]?.content?.parts?.[0]?.text || "";
+        const cleanJson = text.replace(/```json/gi, "").replace(/```/g, "").trim();
+        const raw = JSON.parse(cleanJson);
+
+        let batchNumber: string | null = raw?.batchNumber ? String(raw.batchNumber).trim() : null;
+        if (batchNumber && /^(none|null|n\/a|na|nil|not\s*found)$/i.test(batchNumber)) {
+          batchNumber = null;
+        }
+        let manufacturingDate: string | null = raw?.manufacturingDate ? String(raw.manufacturingDate).trim() : null;
+        if (manufacturingDate && /^(none|null|n\/a|na|nil|not\s*found)$/i.test(manufacturingDate)) {
+          manufacturingDate = null;
+        }
+        let expiryDate: string | null = raw?.expiryDate ? String(raw.expiryDate).trim() : null;
+        if (expiryDate && /^(none|null|n\/a|na|nil|not\s*found)$/i.test(expiryDate)) {
+          expiryDate = null;
+        }
+
+        const foundFields: ("batchNumber" | "manufacturingDate" | "expiryDate")[] = [];
+        if (batchNumber) foundFields.push("batchNumber");
+        if (manufacturingDate) foundFields.push("manufacturingDate");
+        if (expiryDate) foundFields.push("expiryDate");
+
+        if (foundFields.length > 0) {
+          return {
+            success: true,
+            data: { batchNumber, manufacturingDate, expiryDate },
+            foundFields,
+            message: "Required data extracted successfully",
+          };
+        }
+      } catch (err) {
+        console.warn(`Direct Gemini model ${model} attempt failed:`, err);
+      }
+    }
+
+    return {
+      success: false,
+      data: { batchNumber: null, manufacturingDate: null, expiryDate: null },
+      foundFields: [],
+      message: "Required data not found. Please upload a clearer image or enter the details manually.",
+    };
+  };
+
   const recognizeImageText = async (imageSource: File | Blob | HTMLCanvasElement) => {
     setOcrLoading(true);
     setLoading(true);
@@ -474,8 +609,28 @@ export const ScannerPage: React.FC = () => {
 
     try {
       const base64 = await imageToBase64(imageSource);
-      const visionRes = await api.post("/scanner/vision-scan", { imageBase64: base64 });
-      const res = visionRes.data;
+      const cleanBase64 = base64.replace(/^data:image\/\w+;base64,/, "");
+
+      let res: any = null;
+
+      // 1. Try backend vision-scan endpoint
+      try {
+        const visionRes = await api.post("/scanner/vision-scan", { imageBase64: base64 }, { timeout: 16000 });
+        if (visionRes.data && (visionRes.data.success || Array.isArray(visionRes.data.foundFields))) {
+          res = visionRes.data;
+        }
+      } catch (backendErr) {
+        console.warn("Backend vision-scan unreachable or timed out, trying direct Gemini fallback...", backendErr);
+      }
+
+      // 2. Seamless client fallback directly to Gemini API if backend failed or returned error
+      if (!res || !res.success) {
+        console.log("Invoking direct Gemini Vision API...");
+        const directRes = await extractMedicineDataDirect(cleanBase64);
+        if (directRes.success || !res) {
+          res = directRes;
+        }
+      }
 
       if (res && res.success && Array.isArray(res.foundFields) && res.foundFields.length > 0) {
         playBeep();

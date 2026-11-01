@@ -477,7 +477,7 @@ export class ScannerService {
   }
 
   async visionScan(imageBase64: string) {
-    const geminiKey = process.env.GEMINI_API_KEY;
+    const geminiKey = process.env.GEMINI_API_KEY || ENV.GEMINI_API_KEY;
     const openaiKey = process.env.OPENAI_API_KEY;
 
     if (!geminiKey && !openaiKey) {
@@ -497,12 +497,12 @@ export class ScannerService {
     let rawAiResult: { batchNumber?: string | null; manufacturingDate?: string | null; expiryDate?: string | null } | null = null;
 
     if (geminiKey) {
-      // Prioritize active, highly responsive Gemini models supporting structured JSON output
+      // Prioritize gemini-flash-latest with active fallback models supporting structured JSON output
       const candidateModels = [
-        "gemini-flash-lite-latest",
-        "gemini-3.5-flash-lite",
         "gemini-flash-latest",
         "gemini-3.8-flash",
+        "gemini-flash-lite-latest",
+        "gemini-3.5-flash-lite",
         "gemini-2.5-flash-lite",
       ];
 
@@ -513,7 +513,10 @@ export class ScannerService {
             `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${geminiKey}`,
             {
               method: "POST",
-              headers: { "Content-Type": "application/json" },
+              headers: {
+                "Content-Type": "application/json",
+                "X-goog-api-key": geminiKey,
+              },
               body: JSON.stringify({
                 contents: [
                   {
@@ -552,7 +555,7 @@ CRITICAL RULES:
                   },
                 },
               }),
-              signal: AbortSignal.timeout(12000),
+              signal: AbortSignal.timeout(18000),
             }
           );
 
