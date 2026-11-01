@@ -72,7 +72,13 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-emerald-950 flex items-center justify-center p-4 selection:bg-emerald-500 selection:text-white relative">
+    <div 
+      className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-emerald-950 flex items-center justify-center p-4 selection:bg-emerald-500 selection:text-white relative"
+      style={{
+        paddingTop: "calc(1rem + env(safe-area-inset-top, 0px))",
+        paddingBottom: "calc(1rem + env(safe-area-inset-bottom, 0px))",
+      }}
+    >
       {/* Verification Popup Modal */}
       {showPopup && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/75 backdrop-blur-sm animate-in fade-in duration-200">
