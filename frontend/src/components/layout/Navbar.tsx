@@ -110,7 +110,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             </div>
             <div className="min-w-0">
               <div className="flex items-center space-x-1 sm:space-x-2">
-                <span className="font-bold text-sm sm:text-lg tracking-tight text-slate-900 truncate">MedFlow</span>
+                <span className="font-bold text-sm sm:text-lg tracking-tight text-slate-900 truncate">MIS</span>
                 <span className="text-[9px] sm:text-[10px] uppercase font-bold tracking-wider px-1 sm:px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200 shrink-0">
                   PRO
                 </span>

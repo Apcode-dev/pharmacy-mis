@@ -183,7 +183,7 @@ export const ReportsPage: React.FC = () => {
       ) : activeTab === "valuation" && valuationData ? (
         <div className="space-y-6">
           {/* Summary KPIs */}
-          <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
             <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs">
               <p className="text-xs font-semibold text-slate-500 uppercase">Total Inventory Capital</p>
               <p className="text-2xl font-bold font-mono text-slate-900 mt-1.5">
@@ -289,7 +289,7 @@ export const ReportsPage: React.FC = () => {
           </div>
 
           {/* Sales KPIs */}
-          <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
             <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs">
               <p className="text-xs font-semibold text-slate-500 uppercase">Gross Sales Revenue</p>
               <p className="text-2xl font-bold font-mono text-emerald-600 mt-1.5">
@@ -374,7 +374,7 @@ export const ReportsPage: React.FC = () => {
       ) : activeTab === "expiry" && expiryData ? (
         <div className="space-y-6">
           {/* Risk Horizon Banners */}
-          <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
             <div className="bg-white p-5 rounded-2xl border border-rose-300 shadow-xs">
               <span className="text-xs font-bold text-rose-600 uppercase">Already Expired</span>
               <p className="text-2xl font-bold font-mono text-rose-700 mt-1">

@@ -222,7 +222,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   <Activity className="w-5 h-5" />
                 </div>
                 <div>
-                  <div className="font-bold text-white text-sm">MedFlow MIS</div>
+                  <div className="font-bold text-white text-sm">MIS Pharmacy</div>
                   <div className="text-[10px] text-emerald-400">Navigation Menu</div>
                 </div>
               </div>

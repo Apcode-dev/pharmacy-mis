@@ -2,7 +2,7 @@ import type { CapacitorConfig } from "@capacitor/cli";
 
 const config: CapacitorConfig = {
   appId: "com.akash.medicalinventory",
-  appName: "Medical Inventory System",
+  appName: "MIS",
   webDir: "dist",
   server: {
     androidScheme: "https",

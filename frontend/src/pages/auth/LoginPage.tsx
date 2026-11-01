@@ -178,7 +178,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
             <Activity className="w-8 h-8" />
           </div>
           <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
-            MedFlow MIS
+            MIS
           </h1>
           <p className="text-slate-400 text-xs sm:text-sm mt-1">
             Enterprise Medical Inventory & Batch Management System

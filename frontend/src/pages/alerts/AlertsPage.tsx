@@ -175,7 +175,7 @@ export const AlertsPage: React.FC<AlertsPageProps> = ({ onNavigate, onAlertsUpda
       </div>
 
       {/* KPI Stats Banners */}
-      <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <div className="bg-white p-4 rounded-2xl border border-rose-200/80 shadow-xs flex items-center justify-between">
           <div>
             <p className="text-xs font-semibold text-rose-600 uppercase tracking-wider">Critical Incidents</p>
