@@ -17,13 +17,13 @@ public class MainActivity extends BridgeActivity {
         // 1. Enable Edge-to-Edge display so system windows dispatch safe-area insets to WebView
         WindowCompat.setDecorFitsSystemWindows(window, false);
 
-        // 2. Set transparent status bar so the app header seamlessly extends beneath it
-        window.setStatusBarColor(Color.TRANSPARENT);
+        // 2. Set dark status bar background (matching reference image #09122C)
+        window.setStatusBarColor(Color.parseColor("#09122C"));
 
-        // 3. Ensure dark status bar icons (time, battery, wifi) remain crisp on the white navbar
+        // 3. Ensure white/light status bar icons (time, battery, wifi) are visible on the dark background
         WindowInsetsControllerCompat insetsController = WindowCompat.getInsetsController(window, window.getDecorView());
         if (insetsController != null) {
-            insetsController.setAppearanceLightStatusBars(true);
+            insetsController.setAppearanceLightStatusBars(false);
         }
     }
 }

@@ -156,6 +156,14 @@ export function App() {
   return (
     <div className="h-[100dvh] min-h-[100dvh] max-h-[100dvh] flex flex-col w-full overflow-hidden bg-slate-50">
       <ToastContainer position="top-right" autoClose={3200} hideProgressBar={false} newestOnTop closeOnClick pauseOnHover theme="colored" className="z-[99999]" />
+      
+      {/* Top Safe Area Status Bar Background (matching Android dark status bar #09122C) */}
+      <div 
+        className="w-full shrink-0 bg-[#09122C]" 
+        style={{ height: "env(safe-area-inset-top, 0px)" }} 
+        aria-hidden="true" 
+      />
+
       {/* Top Navigation (Fixed at top) */}
       <Navbar 
         onModuleChange={(mod) => handleNavigate(mod)} 

@@ -317,22 +317,25 @@ export const MedicinesPage: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Header & Tabs */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
         <div>
-          <div className="flex items-center space-x-2">
-            <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300">
-              Module 04
+          <div className="flex items-center space-x-2 flex-wrap gap-y-1">
+            <span className="text-[10px] font-extrabold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 shadow-2xs">
+              MODULE 04
             </span>
-            <span className="text-xs text-slate-500">Master Drug Formulary &amp; Specifications</span>
+            <span className="text-slate-300 text-xs hidden sm:inline">|</span>
+            <span className="text-xs text-slate-500 font-medium">Master Drug Formulary &amp; Specifications</span>
           </div>
-          <h1 className="text-2xl font-bold text-slate-900 mt-1">Medicine &amp; Master Management</h1>
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight mt-1 sm:mt-1.5">
+            Medicine &amp; Master Management
+          </h1>
         </div>
 
-        <div className="flex items-center space-x-2.5">
+        <div className="flex items-center space-x-2 shrink-0">
           {activeMainTab === "medicines" ? (
             <button
               onClick={() => setShowAddModal(true)}
-              className="flex items-center space-x-1.5 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-md shadow-emerald-600/20 transition-all cursor-pointer"
+              className="flex items-center space-x-1.5 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white rounded-xl text-xs sm:text-sm font-semibold shadow-sm shadow-emerald-600/30 transition-all cursor-pointer"
             >
               <Plus className="w-4 h-4" />
               <span>Add New Medicine</span>
@@ -344,7 +347,7 @@ export const MedicinesPage: React.FC = () => {
                 else if (activeMasterSubtab === "categories") setQuickModal("category");
                 else setQuickModal("manufacturer");
               }}
-              className="flex items-center space-x-1.5 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-md shadow-emerald-600/20 transition-all cursor-pointer"
+              className="flex items-center space-x-1.5 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white rounded-xl text-xs sm:text-sm font-semibold shadow-sm shadow-emerald-600/30 transition-all cursor-pointer"
             >
               <Plus className="w-4 h-4" />
               <span>
@@ -358,7 +361,7 @@ export const MedicinesPage: React.FC = () => {
               fetchDropdowns();
               fetchMedicines();
             }}
-            className="p-2.5 bg-white border border-slate-200 hover:bg-slate-50 rounded-xl text-slate-600 transition-colors"
+            className="p-2.5 bg-white border border-slate-200 hover:bg-slate-50 active:bg-slate-100 rounded-xl text-slate-700 transition-colors shadow-2xs cursor-pointer"
             title="Refresh All"
           >
             <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin text-emerald-600" : ""}`} />
@@ -366,30 +369,30 @@ export const MedicinesPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Main Mode Navigation Switcher */}
-      <div className="flex items-center space-x-1 bg-slate-200/70 p-1 rounded-2xl w-fit border border-slate-300/60 shadow-xs">
+      {/* Main Mode Navigation Switcher Tabs */}
+      <div className="flex items-center space-x-1.5 bg-slate-100 p-1 rounded-2xl w-full sm:w-fit border border-slate-200 shadow-2xs">
         <button
           onClick={() => setActiveMainTab("medicines")}
-          className={`flex items-center space-x-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+          className={`flex-1 sm:flex-initial flex items-center justify-center space-x-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
             activeMainTab === "medicines"
-              ? "bg-white text-emerald-700 shadow-sm shadow-slate-300"
-              : "text-slate-600 hover:text-slate-900"
+              ? "bg-white text-emerald-700 shadow-xs border border-slate-200/50"
+              : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/60"
           }`}
         >
-          <Pill className="w-4 h-4" />
+          <Pill className="w-4 h-4 text-emerald-600" />
           <span>Medicine Catalog ({medicines.length})</span>
         </button>
 
         <button
           onClick={() => setActiveMainTab("masters")}
-          className={`flex items-center space-x-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+          className={`flex-1 sm:flex-initial flex items-center justify-center space-x-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
             activeMainTab === "masters"
-              ? "bg-white text-emerald-700 shadow-sm shadow-slate-300"
-              : "text-slate-600 hover:text-slate-900"
+              ? "bg-white text-emerald-700 shadow-xs border border-slate-200/50"
+              : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/60"
           }`}
         >
-          <Layers className="w-4 h-4" />
-          <span>Master Specifications (Forms, Categories, Manufacturers)</span>
+          <Layers className="w-4 h-4 text-slate-500" />
+          <span>Master Specifications</span>
         </button>
       </div>
 
@@ -404,23 +407,23 @@ export const MedicinesPage: React.FC = () => {
       {activeMainTab === "medicines" && (
         <div className="space-y-4">
           {/* Filter and Search Bar */}
-          <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm flex flex-col md:flex-row items-center gap-3">
+          <div className="bg-white rounded-2xl p-3.5 sm:p-4 border border-slate-200 shadow-sm flex flex-col md:flex-row items-stretch md:items-center gap-2.5 sm:gap-3">
             <div className="relative flex-1 w-full">
               <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
               <input
                 type="text"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search by brand name, generic name, active drug composition..."
-                className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white transition-all"
+                placeholder="Search by brand name, generic formula, composition..."
+                className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white transition-all font-medium"
               />
             </div>
 
-            <div className="flex items-center gap-2 w-full md:w-auto flex-wrap">
+            <div className="grid grid-cols-2 sm:flex sm:items-center gap-2 w-full md:w-auto">
               <select
                 value={selectedForm}
                 onChange={(e) => setSelectedForm(e.target.value)}
-                className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                className="w-full sm:w-auto px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500"
               >
                 <option value="">All Dosage Forms</option>
                 {dosageForms.map((df) => (
@@ -431,7 +434,7 @@ export const MedicinesPage: React.FC = () => {
               <select
                 value={selectedCategory}
                 onChange={(e) => setSelectedCategory(e.target.value)}
-                className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                className="w-full sm:w-auto px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500"
               >
                 <option value="">All Categories</option>
                 {categories.map((c) => (
@@ -440,21 +443,22 @@ export const MedicinesPage: React.FC = () => {
               </select>
 
               <button
+                type="button"
                 onClick={() => setLowStockOnly(!lowStockOnly)}
-                className={`px-3 py-2 rounded-xl text-xs font-semibold flex items-center space-x-1.5 transition-colors border ${
+                className={`col-span-2 sm:col-span-1 px-3 py-2 rounded-xl text-xs font-semibold flex items-center justify-center space-x-1.5 transition-colors border cursor-pointer ${
                   lowStockOnly
-                    ? "bg-amber-500 text-white border-amber-600"
+                    ? "bg-amber-500 text-white border-amber-600 shadow-xs"
                     : "bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100"
                 }`}
               >
-                <AlertTriangle className="w-3.5 h-3.5" />
+                <AlertTriangle className="w-3.5 h-3.5 text-amber-500" />
                 <span>Low Stock</span>
               </button>
             </div>
           </div>
 
-          {/* Medicines Table */}
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+          {/* Desktop Medicines Table (Large Screens) */}
+          <div className="hidden lg:block bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse text-xs">
                 <thead>
@@ -602,6 +606,154 @@ export const MedicinesPage: React.FC = () => {
                 </tbody>
               </table>
             </div>
+          </div>
+
+          {/* Mobile Responsive Medicine Cards View (Mobile & Tablet) */}
+          <div className="block lg:hidden space-y-3">
+            {loading ? (
+              <div className="bg-white rounded-2xl border border-slate-200 p-8 text-center text-slate-400">
+                <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2 text-emerald-600" />
+                <span className="text-xs">Loading medicine catalog...</span>
+              </div>
+            ) : medicines.length === 0 ? (
+              <div className="bg-white rounded-2xl border border-slate-200 p-8 text-center text-slate-400">
+                <Pill className="w-8 h-8 mx-auto mb-2 text-slate-300" />
+                <p className="font-semibold text-slate-700 text-sm">No medicines found</p>
+                <p className="text-xs text-slate-400 mt-1">
+                  Click "Add New Medicine" above to create product entries.
+                </p>
+              </div>
+            ) : (
+              medicines.map((med) => (
+                <div 
+                  key={med._id} 
+                  className="bg-white rounded-2xl p-4 border border-slate-200 shadow-xs space-y-3 hover:border-slate-300 transition-all"
+                >
+                  {/* Card Header: Medicine Name & Badges */}
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <div className="flex items-center space-x-1.5 flex-wrap">
+                        <span className="font-bold text-slate-900 text-sm">{med.name}</span>
+                        {med.prescriptionRequired && (
+                          <span className="px-1.5 py-0.2 rounded text-[9px] font-extrabold bg-rose-100 text-rose-700 border border-rose-200">
+                            Rx
+                          </span>
+                        )}
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-700 border border-slate-200">
+                          {med.dosageFormId?.name || "Tablet"}
+                        </span>
+                      </div>
+                      <div className="text-slate-500 text-xs mt-0.5 truncate">{med.genericName}</div>
+                    </div>
+
+                    {/* Stock Status Badge */}
+                    <div className="text-right shrink-0">
+                      <div className="flex items-center justify-end space-x-1.5">
+                        <span
+                          className={`w-2 h-2 rounded-full ${
+                            med.isOutOfStock
+                              ? "bg-rose-500"
+                              : med.isLowStock
+                              ? "bg-amber-500"
+                              : "bg-emerald-500"
+                          }`}
+                        />
+                        <span className="font-bold text-slate-900 text-xs">{med.totalStock} {med.unit || "units"}</span>
+                      </div>
+                      {med.isLowStock && !med.isOutOfStock && (
+                        <span className="text-[10px] font-bold text-amber-600 block">Low Stock</span>
+                      )}
+                      {med.isOutOfStock && (
+                        <span className="text-[10px] font-bold text-rose-600 block">Out of Stock</span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Middle Info Grid: Category, Manufacturer & Strength */}
+                  <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-100 text-xs">
+                    <div>
+                      <span className="text-[10px] uppercase font-bold text-slate-400 block">Category</span>
+                      <span className="font-semibold text-slate-700 truncate block">
+                        {med.therapeuticCategoryId?.name || "General"}
+                      </span>
+                    </div>
+
+                    <div>
+                      <span className="text-[10px] uppercase font-bold text-slate-400 block">Manufacturer</span>
+                      <span className="font-semibold text-slate-700 truncate block flex items-center gap-1">
+                        <Building className="w-3 h-3 text-slate-400 shrink-0" />
+                        <span className="truncate">{med.manufacturerId?.name || "Direct Supply"}</span>
+                      </span>
+                    </div>
+
+                    <div>
+                      <span className="text-[10px] uppercase font-bold text-slate-400 block">Strength / Unit</span>
+                      <span className="font-semibold text-slate-800">
+                        {med.strength || "Standard"} <span className="text-slate-400 font-normal">/ {med.unit}</span>
+                      </span>
+                    </div>
+
+                    <div>
+                      <span className="text-[10px] uppercase font-bold text-slate-400 block">Primary Barcode</span>
+                      {med.primaryCode ? (
+                        <span className="inline-flex items-center space-x-1 font-mono text-[11px] text-slate-700">
+                          <QrCode className="w-3 h-3 text-emerald-600" />
+                          <span>{med.primaryCode}</span>
+                        </span>
+                      ) : (
+                        <span className="text-slate-400 text-[11px] italic">Not registered</span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Card Actions Footer */}
+                  <div className="flex items-center justify-between pt-2 border-t border-slate-100">
+                    <span className="text-[11px] text-slate-400">
+                      ID: <span className="font-mono text-slate-600">{med._id?.slice(-6)}</span>
+                    </span>
+                    <div className="flex items-center space-x-1.5">
+                      <button
+                        onClick={() => setSelectedMedDetail(med)}
+                        className="p-1.5 text-slate-600 hover:text-slate-900 bg-slate-50 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer border border-slate-200"
+                        title="View Full Profile"
+                      >
+                        <Eye className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        onClick={() => {
+                          setEditingMedicine({
+                            _id: med._id,
+                            name: med.name,
+                            brandName: med.brandName || "",
+                            genericName: med.genericName,
+                            strength: med.strength,
+                            dosageFormId: med.dosageFormId?._id || med.dosageFormId || "",
+                            therapeuticCategoryId: med.therapeuticCategoryId?._id || med.therapeuticCategoryId || "",
+                            manufacturerId: med.manufacturerId?._id || med.manufacturerId || "",
+                            composition: med.composition || "",
+                            prescriptionRequired: med.prescriptionRequired || false,
+                            minStockLevel: med.minStockLevel || 20,
+                            maxStockLevel: med.maxStockLevel || 500,
+                            unit: med.unit || "Strip",
+                          });
+                        }}
+                        className="p-1.5 text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors cursor-pointer border border-blue-200"
+                        title="Edit Medicine"
+                      >
+                        <Edit2 className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        onClick={() => handleDeleteMedicine(med._id, med.name)}
+                        className="p-1.5 text-rose-600 hover:text-rose-800 bg-rose-50 hover:bg-rose-100 rounded-lg transition-colors cursor-pointer border border-rose-200"
+                        title="Delete Medicine"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
           </div>
         </div>
       )}
